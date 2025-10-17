@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Edit Photo"
 include(":app")
+include(":sdk")

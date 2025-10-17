@@ -3,7 +3,6 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="Edit_Photo.openCVLibrary" target="21" />
-      <module name="Edit_Photo.sdk" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>
