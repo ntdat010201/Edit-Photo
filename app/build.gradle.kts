@@ -50,6 +50,17 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation ("com.intuit.sdp:sdp-android:1.1.0")
+    implementation("com.intuit.sdp:sdp-android:1.1.0")
+
+    // Glide
+    implementation(libs.glide)
+
+    // ViewModel & LiveData
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+
+    implementation ("com.google.mlkit:face-detection:16.1.5")
+
 
 }
