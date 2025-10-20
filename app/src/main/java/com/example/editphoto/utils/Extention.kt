@@ -1,141 +1,305 @@
 package com.example.editphoto.utils
 
-import android.graphics.PointF
-
-
-
 import android.graphics.Bitmap
-import android.graphics.Color
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
-import android.util.Log
-import com.google.mlkit.vision.face.FaceContour
-import kotlin.math.max
-import kotlin.math.min
 
-// Extension để tạo mặt nạ từ danh sách điểm contour
-fun Bitmap.createMaskFromContours(points: List<PointF>, blurSize: Double = 7.0): Mat? {
-    val fullMat = Mat()
-    Utils.bitmapToMat(this, fullMat)
+/**
+ * Hàm tô màu môi chính xác theo landmark.
+ * Áp dụng khi người dùng bấm "Apply" để ghi thật vào ảnh.
+ *
+ * @param landmarks danh sách landmarks từ MediaPipe (đã detect sẵn)
+ * @param color màu tô (Scalar BGR)
+ * @param intensity độ đậm (0f - 1f)
+ */
+fun Bitmap.applyLipColorFromLandmarks(
+    landmarks: List<NormalizedLandmark>,
+    color: Scalar,
+    intensity: Float
+): Bitmap {
+    val inputMat = Mat()
+    Utils.bitmapToMat(this, inputMat)
 
-    // Nội suy để thêm điểm trung gian
-    val interpolatedPoints = mutableListOf<Point>()
-    for (i in 0 until points.size) {
-        val current = points[i]
-        interpolatedPoints.add(Point(current.x.toDouble(), current.y.toDouble()))
-        if (i < points.size - 1) {
-            val next = points[i + 1]
-            val midX = (current.x + next.x) / 2
-            val midY = (current.y + next.y) / 2
-            interpolatedPoints.add(Point(midX.toDouble(), midY.toDouble()))
-        }
-    }
+    val width = this.width.toDouble()
+    val height = this.height.toDouble()
 
-    val mask = Mat.zeros(fullMat.size(), CvType.CV_8UC1)
-    val pointMat = MatOfPoint(*interpolatedPoints.toTypedArray())
-
-    // Vẽ đa giác bao quanh vùng
-    val pointList = listOf(pointMat)
-    Imgproc.fillPoly(mask, pointList, Scalar(255.0))
-
-    // Làm mịn mặt nạ
-    val blurredMask = Mat()
-    Imgproc.GaussianBlur(mask, blurredMask, Size(blurSize, blurSize), 0.0)
-
-    fullMat.release()
-    pointMat.release()
-    mask.release()
-    return blurredMask
-}
-
-// Extension để tạo mặt nạ từ vùng hình chữ nhật
-fun Bitmap.createMaskFromRect(left: Float, top: Float, right: Float, bottom: Float, blurSize: Double = 7.0): Mat? {
-    val fullMat = Mat()
-    Utils.bitmapToMat(this, fullMat)
-
-    val mask = Mat.zeros(fullMat.size(), CvType.CV_8UC1)
-    val region = Rect(
-        maxOf(0, left.toInt()),
-        maxOf(0, top.toInt()),
-        minOf(fullMat.cols() - 1, (right - left).toInt()),
-        minOf(fullMat.rows() - 1, (bottom - top).toInt())
+    // Các điểm môi (MediaPipe FaceMesh indices)
+    val lipIndices = listOf(
+        61,185,40,39,37,0,267,269,270,409,
+        78,95,88,178,87,14,317,402,318,324
     )
 
-    if (region.width > 0 && region.height > 0) {
-        Imgproc.rectangle(mask, region, Scalar(255.0), -1)
-        val blurredMask = Mat()
-        Imgproc.GaussianBlur(mask, blurredMask, Size(blurSize, blurSize), 0.0)
-        fullMat.release()
-        mask.release()
-        return blurredMask
-    } else {
-        Log.e("ImageProcessingExtensions", "Invalid region: $region")
-        fullMat.release()
-        return null
-    }
-}
+    val lipPoints = lipIndices.map { idx ->
+        val lm = landmarks[idx]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
 
-// Extension để áp hiệu ứng lên vùng với mặt nạ
-fun Bitmap.applyEffectWithMask(mask: Mat?, color: Int, alpha: Float, blurSize: Double = 7.0): Bitmap? {
-    if (mask == null) {
-        Log.e("ImageProcessingExtensions", "Mask is null")
-        return null
-    }
+    // Tạo mask môi
+    val lipMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    Imgproc.fillPoly(lipMask, listOf(MatOfPoint(*lipPoints)), Scalar(255.0))
+    Imgproc.GaussianBlur(lipMask, lipMask, Size(3.0, 3.0), 2.0)
 
-    val srcMat = Mat()
-    Utils.bitmapToMat(this, srcMat)
+    // Lấy vùng môi
+    val lipRegion = Mat()
+    inputMat.copyTo(lipRegion, lipMask)
 
-    // Tạo Mat màu đồng nhất
-    val colorMat = Mat(srcMat.size(), srcMat.type(), Scalar(
-        Color.blue(color).toDouble(),
-        Color.green(color).toDouble(),
-        Color.red(color).toDouble(),
-        255.0
-    ))
+    // Tạo lớp overlay màu
+    val overlay = Mat(lipRegion.size(), lipRegion.type(), color)
 
-    // Cho phép alpha từ 0.0 (trong suốt) đến 1.0 (màu đậm nhất)
-    val alphaDouble = alpha.toDouble().coerceIn(0.0, 1.0)
-    val betaDouble = 1.0 - alphaDouble
+    // Blend môi theo độ đậm
+    val blended = Mat()
+    Core.addWeighted(lipRegion, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
 
-    // Tạo Mat cho vùng đã blend
-    val regionMat = Mat()
-    Core.addWeighted(srcMat, betaDouble, colorMat, alphaDouble, 0.0, regionMat, -1)
-
-    // Tăng độ sáng nhẹ
-    val brightMat = Mat()
-    Core.convertScaleAbs(regionMat, brightMat, 1.1, 10.0)
-
-    // Làm mịn vùng đã tô
-    val blurredRegionMat = Mat()
-    Imgproc.GaussianBlur(brightMat, blurredRegionMat, Size(blurSize, blurSize), 0.0)
-
-    // Áp mặt nạ để chỉ giữ màu trong vùng
-    val maskedRegionMat = Mat()
-    Core.bitwise_and(blurredRegionMat, blurredRegionMat, maskedRegionMat, mask)
-
-    // Giữ nguyên vùng ngoài từ ảnh gốc
-    val resultMat = srcMat.clone()
-    val inverseMask = Mat()
-    Core.bitwise_not(mask, inverseMask)
-    Core.bitwise_and(srcMat, srcMat, resultMat, inverseMask)
-
-    // Kết hợp vùng đã tô màu với ảnh gốc
-    Core.add(resultMat, maskedRegionMat, resultMat)
+    // Gộp vào ảnh gốc (chỉ vùng môi)
+    blended.copyTo(inputMat, lipMask)
 
     // Chuyển về Bitmap
-    val resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(), Bitmap.Config.ARGB_8888)
-    Utils.matToBitmap(resultMat, resultBitmap)
-
-    // Giải phóng bộ nhớ
-    srcMat.release()
-    colorMat.release()
-    regionMat.release()
-    brightMat.release()
-    blurredRegionMat.release()
-    maskedRegionMat.release()
-    resultMat.release()
-    inverseMask.release()
-
-    return resultBitmap
+    val outputBitmap = Bitmap.createBitmap(inputMat.cols(), inputMat.rows(), Bitmap.Config.ARGB_8888)
+    Utils.matToBitmap(inputMat, outputBitmap)
+    return outputBitmap
 }
+
+/**
+ * Tạo mask môi + vùng môi + ảnh gốc (baseMat)
+ * Dùng cho preview realtime — chỉ tính toán 1 lần.
+ */
+fun Bitmap.createLipMaskAndRegion(
+    landmarks: List<NormalizedLandmark>
+): Triple<Mat, Mat, Mat> {
+    val inputMat = Mat()
+    Utils.bitmapToMat(this, inputMat)
+
+    val width = this.width.toDouble()
+    val height = this.height.toDouble()
+
+    val lipIndices = listOf(
+        61,185,40,39,37,0,267,269,270,409,
+        78,95,88,178,87,14,317,402,318,324
+    )
+
+    val lipPoints = lipIndices.map { idx ->
+        val lm = landmarks[idx]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
+
+    val lipMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    Imgproc.fillPoly(lipMask, listOf(MatOfPoint(*lipPoints)), Scalar(255.0))
+    Imgproc.GaussianBlur(lipMask, lipMask, Size(3.0, 3.0), 2.0)
+
+    val lipRegion = Mat()
+    inputMat.copyTo(lipRegion, lipMask)
+
+    return Triple(lipMask, lipRegion, inputMat)
+}
+
+/**
+ * Hàm blend nhanh cho preview realtime (khi kéo SeekBar)
+ * Chỉ thao tác trên vùng môi nhỏ nên cực nhẹ.
+ */
+fun Mat.quickApplyLipColor(color: Scalar, intensity: Float): Mat {
+    val overlay = Mat(this.size(), this.type(), color)
+    val blended = Mat()
+    Core.addWeighted(this, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
+    return blended
+}
+
+/**
+ * Chuyển Mat -> Bitmap an toàn
+ */
+fun Mat.toBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(this.cols(), this.rows(), Bitmap.Config.ARGB_8888)
+    Utils.matToBitmap(this, bitmap)
+    return bitmap
+}
+
+/**
+ * Chuyển Bitmap -> Mat nhanh
+ */
+fun Bitmap.toMat(): Mat {
+    val mat = Mat()
+    Utils.bitmapToMat(this, mat)
+    return mat
+}
+
+
+/*package com.example.editphoto.utils
+
+import android.graphics.Bitmap
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
+import org.opencv.android.Utils
+import org.opencv.core.*
+import org.opencv.imgproc.Imgproc
+
+*//**
+ * Áp màu môi chính xác (môi trên + môi dưới)
+ * Không bị ám xanh, không tô răng, blend mượt tự nhiên.
+ *//*
+fun Bitmap.applyLipColorFromLandmarks(
+    landmarks: List<NormalizedLandmark>,
+    color: Scalar,
+    intensity: Float
+): Bitmap {
+    val inputMatRaw = Mat()
+    Utils.bitmapToMat(this, inputMatRaw)
+
+    // Đảm bảo dùng không gian màu BGR 3 kênh
+    val inputMat = Mat()
+    if (inputMatRaw.channels() == 4)
+        Imgproc.cvtColor(inputMatRaw, inputMat, Imgproc.COLOR_RGBA2BGR)
+    else
+        inputMatRaw.copyTo(inputMat)
+
+    val width = this.width.toDouble()
+    val height = this.height.toDouble()
+
+    // ✅ Danh sách môi chuẩn (MediaPipe FaceMesh 468 points)
+    val outerLips = listOf(
+        61,146,91,181,84,17,314,405,
+        321,375,291,308,324,318,402,
+        317,14,87,178,88,95,78
+    )
+    val innerLips = listOf(
+        78,191,80,81,82,13,312,311,
+        310,415,308
+    )
+
+    // --- Tạo polygon môi ---
+    val outerPoints = outerLips.map { i ->
+        val lm = landmarks[i]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
+
+    val innerPoints = innerLips.map { i ->
+        val lm = landmarks[i]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
+
+    // --- Mask môi ---
+    val outerMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    val innerMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    Imgproc.fillPoly(outerMask, listOf(MatOfPoint(*outerPoints)), Scalar(255.0))
+    Imgproc.fillPoly(innerMask, listOf(MatOfPoint(*innerPoints)), Scalar(255.0))
+
+    // Môi = outer - inner (loại bỏ răng)
+    val lipMask = Mat()
+    Core.subtract(outerMask, innerMask, lipMask)
+    Imgproc.GaussianBlur(lipMask, lipMask, Size(5.0, 5.0), 3.0)
+
+    // --- Blend màu ---
+    val lipRegion = Mat()
+    inputMat.copyTo(lipRegion, lipMask)
+
+    val overlay = Mat(lipRegion.size(), CvType.CV_8UC3, color)
+    val blended = Mat()
+    Core.addWeighted(lipRegion, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
+
+    // Gộp lại ảnh
+    blended.copyTo(inputMat, lipMask)
+
+    // Trả về bitmap
+    val output = Bitmap.createBitmap(inputMat.cols(), inputMat.rows(), Bitmap.Config.ARGB_8888)
+    Utils.matToBitmap(inputMat, output)
+    return output
+}
+
+*//**
+ * Tạo mask môi + vùng môi + ảnh gốc (baseMat)
+ * Dùng cho preview realtime (SeekBar)
+ *//*
+fun Bitmap.createLipMaskAndRegion(
+    landmarks: List<NormalizedLandmark>
+): Triple<Mat, Mat, Mat> {
+    val inputMatRaw = Mat()
+    Utils.bitmapToMat(this, inputMatRaw)
+
+    val inputMat = Mat()
+    if (inputMatRaw.channels() == 4)
+        Imgproc.cvtColor(inputMatRaw, inputMat, Imgproc.COLOR_RGBA2BGR)
+    else
+        inputMatRaw.copyTo(inputMat)
+
+    val width = this.width.toDouble()
+    val height = this.height.toDouble()
+
+    val outerLips = listOf(
+        61,146,91,181,84,17,314,405,
+        321,375,291,308,324,318,402,
+        317,14,87,178,88,95,78
+    )
+    val innerLips = listOf(
+        78,191,80,81,82,13,312,311,
+        310,415,308
+    )
+
+    val outerPoints = outerLips.map { i ->
+        val lm = landmarks[i]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
+
+    val innerPoints = innerLips.map { i ->
+        val lm = landmarks[i]
+        Point(lm.x() * width, lm.y() * height)
+    }.toTypedArray()
+
+    val outerMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    val innerMask = Mat.zeros(height.toInt(), width.toInt(), CvType.CV_8UC1)
+    Imgproc.fillPoly(outerMask, listOf(MatOfPoint(*outerPoints)), Scalar(255.0))
+    Imgproc.fillPoly(innerMask, listOf(MatOfPoint(*innerPoints)), Scalar(255.0))
+
+    val lipMask = Mat()
+    Core.subtract(outerMask, innerMask, lipMask)
+    Imgproc.GaussianBlur(lipMask, lipMask, Size(5.0, 5.0), 3.0)
+
+    val lipRegion = Mat()
+    inputMat.copyTo(lipRegion, lipMask)
+
+    return Triple(lipMask, lipRegion, inputMat)
+}
+
+*//**
+ * Blend realtime (SeekBar) – chỉ áp dụng trong vùng môi, không ám xanh.
+ *//*
+fun quickApplyLipColorRealtime(
+    baseMat: Mat,          // ảnh gốc
+    lipMask: Mat,          // mask môi
+    color: Scalar,         // màu tô
+    intensity: Float       // độ đậm
+): Mat {
+    val bgr = Mat()
+    when (baseMat.channels()) {
+        4 -> Imgproc.cvtColor(baseMat, bgr, Imgproc.COLOR_RGBA2BGR)
+        1 -> Imgproc.cvtColor(baseMat, bgr, Imgproc.COLOR_GRAY2BGR)
+        else -> baseMat.copyTo(bgr)
+    }
+
+    val lipRegion = Mat()
+    bgr.copyTo(lipRegion, lipMask)
+
+    val overlay = Mat(lipRegion.size(), CvType.CV_8UC3, color)
+    val blended = Mat()
+    Core.addWeighted(lipRegion, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
+
+    blended.copyTo(bgr, lipMask)
+    return bgr
+}
+
+*//**
+ * Mat -> Bitmap
+ *//*
+fun Mat.toBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(this.cols(), this.rows(), Bitmap.Config.ARGB_8888)
+    Utils.matToBitmap(this, bitmap)
+    return bitmap
+}
+
+*//**
+ * Bitmap -> Mat
+ *//*
+fun Bitmap.toMat(): Mat {
+    val mat = Mat()
+    Utils.bitmapToMat(this, mat)
+    return mat
+}*/
+

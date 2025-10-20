@@ -1,6 +1,6 @@
 package com.example.editphoto.ui.activities
 
-import android.net.Uri
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -24,49 +24,73 @@ import com.example.editphoto.ui.fragments.WhiteFragment
 import com.example.editphoto.utils.listAdjust
 import com.example.editphoto.utils.listFace
 import com.example.editphoto.viewmodel.EditImageViewModel
+import com.google.mediapipe.tasks.vision.core.RunningMode
+import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
+import com.google.mediapipe.tasks.core.BaseOptions
 import org.opencv.android.OpenCVLoader
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class EditImageActivity : BaseActivity() {
     private lateinit var binding: ActivityEditImageBinding
     private val viewModel: EditImageViewModel by viewModels()
     private lateinit var featuresAdapter: MainFeaturesAdapter
+    private var originalBitmap: Bitmap? = null
+    private var faceLandmarker: FaceLandmarker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Init OpenCV
+        if (!OpenCVLoader.initDebug()) {
+            throw IllegalStateException("OpenCV failed to load")
+        }
+
+        // Init MediaPipe
+        setupFaceLandmarker()
+
         initData()
         initView()
         initListener()
+        observeViewModel()
+    }
+
+    private fun setupFaceLandmarker() {
+        val baseOptions = BaseOptions.builder()
+            .setModelAssetPath("face_landmarker.task") // Load từ assets
+            .build()
+        val options = FaceLandmarker.FaceLandmarkerOptions.builder()
+            .setBaseOptions(baseOptions)
+            .setRunningMode(RunningMode.IMAGE)
+            .setNumFaces(1)
+            .setOutputFaceBlendshapes(true)
+            .setMinFaceDetectionConfidence(0.5f)
+            .build()
+        faceLandmarker = FaceLandmarker.createFromOptions(this, options)
+        viewModel.setFaceLandmarker(faceLandmarker!!)
     }
 
     private fun initData() {
-
         val uriString = intent.getStringExtra("image_uri")
-        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
-        viewModel.setOriginalImage(bitmap)
-
+        originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
+        viewModel.updateBitmap(originalBitmap!!)
         binding.rvMainFeatures.apply {
             featuresAdapter = MainFeaturesAdapter(listAdjust)
-            layoutManager =
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
             adapter = featuresAdapter
         }
-
-        if (!OpenCVLoader.initDebug()) {
-            Log.e("OpenCV", "Không load được OpenCV")
-        } else {
-            Log.d("OpenCV", "Đã load OpenCV thành công")
-        }
-
     }
 
-
     private fun initView() {
-        viewModel.editedImage.observe(this) { updatedBitmap ->
-            binding.imgPreview.setImageBitmap(updatedBitmap)
-        }
+        binding.imgPreview.setImageBitmap(originalBitmap)
+    }
 
+    private fun observeViewModel() {
+        viewModel.editedBitmap.observe(this) { bitmap ->
+            binding.imgPreview.setImageBitmap(bitmap)
+        }
     }
 
     private fun initListener() {
@@ -91,8 +115,7 @@ class EditImageActivity : BaseActivity() {
 
         val subAdapter = SubOptionsAdapter(list)
         binding.rvSubOptions.apply {
-            layoutManager =
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
             adapter = subAdapter
         }
 
@@ -104,12 +127,15 @@ class EditImageActivity : BaseActivity() {
                 SubType.WHITE -> WhiteFragment()
                 SubType.BLUR -> BlurFragment()
             }
-
             supportFragmentManager.beginTransaction()
                 .replace(R.id.editContainer, fragment)
+                .addToBackStack(null)
                 .commit()
         }
     }
 
-
+    override fun onDestroy() {
+        super.onDestroy()
+        faceLandmarker?.close() // Đóng để tránh memory leak
+    }
 }
