@@ -51,13 +51,25 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    //sdp
     implementation("com.intuit.sdp:sdp-android:1.1.0")
+    //glide
     implementation(libs.glide)
+    //viewmodel + livedata
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
-
+    //mediapipe
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
+    //opencv
     implementation(project(":sdk"))
+    //camera
+    implementation ("androidx.camera:camera-core:1.3.0")
+    implementation ("androidx.camera:camera-camera2:1.3.0")
+    implementation ("androidx.camera:camera-lifecycle:1.3.0")
+    implementation ("androidx.camera:camera-video:1.3.0")
+    implementation ("androidx.camera:camera-view:1.3.0")
+
 }
 

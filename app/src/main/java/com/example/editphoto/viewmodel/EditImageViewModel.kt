@@ -89,37 +89,12 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /**
-     * Chuyển Mat -> Bitmap
-     */
-    fun matToBitmap(mat: Mat): Bitmap {
-        val bitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(mat, bitmap)
-        return bitmap
-    }
-
-    /**
-     * Chuyển Bitmap -> Mat
-     */
-    fun bitmapToMat(bitmap: Bitmap): Mat {
-        val mat = Mat()
-        Utils.bitmapToMat(bitmap, mat)
-        return mat
-    }
-
-    /**
      * Đặt trạng thái đang xử lý (để hiển thị progress)
      */
     fun setProcessing(isLoading: Boolean) {
         isProcessing.postValue(isLoading)
     }
 
-    /**
-     * Đảm bảo Bitmap có config hợp lệ (tránh null)
-     */
-    private fun ensureConfig(bitmap: Bitmap): Bitmap {
-        val config = bitmap.config ?: Bitmap.Config.ARGB_8888
-        return if (bitmap.config == config) bitmap else bitmap.copy(config, true)
-    }
 
     override fun onCleared() {
         super.onCleared()
