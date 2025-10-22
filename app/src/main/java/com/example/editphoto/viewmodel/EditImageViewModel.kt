@@ -9,22 +9,18 @@ import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.opencv.android.Utils
-import org.opencv.core.Mat
 
-/**
- * ViewModel trung tâm cho các chức năng chỉnh sửa ảnh:
- * - Lưu trữ ảnh gốc & ảnh đang chỉnh
- * - Cung cấp FaceLandmarker để các fragment dùng chung
- * - Chuyển đổi Bitmap <-> Mat để xử lý bằng OpenCV
- */
+
 class EditImageViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Ảnh gốc (ban đầu load vào) */
     val originalBitmap = MutableLiveData<Bitmap>()
 
-    /** Ảnh đang chỉnh sửa realtime */
+    /** Ảnh đang chỉnh sửa thật (Apply xong) */
     val editedBitmap = MutableLiveData<Bitmap>()
+
+    /** Ảnh preview tạm thời (chưa Apply, chỉ hiển thị khi kéo SeekBar) */
+    val previewBitmap = MutableLiveData<Bitmap?>()
 
     /** FaceLandmarker (MediaPipe) - khởi tạo 1 lần dùng chung */
     private var faceLandmarker: FaceLandmarker? = null
@@ -37,7 +33,7 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
     // ---------------------------
 
     /**
-     * Cập nhật ảnh hiện tại (realtime hiển thị)
+     * Cập nhật ảnh hiện tại (realtime hiển thị - ảnh thật)
      */
     fun updateBitmap(bitmap: Bitmap) {
         editedBitmap.postValue(bitmap)
@@ -53,7 +49,6 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         editedBitmap.value = safeBitmap.copy(config, true)
     }
 
-
     /**
      * Reset ảnh về gốc
      */
@@ -61,6 +56,25 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         originalBitmap.value?.let { bmp ->
             val config = bmp.config ?: Bitmap.Config.ARGB_8888
             updateBitmap(bmp.copy(config, true))
+        }
+        previewBitmap.postValue(null)
+    }
+
+    /**
+     * Đặt ảnh preview tạm thời
+     */
+    fun setPreview(bitmap: Bitmap?) {
+        previewBitmap.postValue(bitmap)
+    }
+
+    /**
+     * Commit preview thành ảnh thật (khi người dùng nhấn Apply)
+     */
+    fun commitPreview() {
+        previewBitmap.value?.let { bmp ->
+            val config = bmp.config ?: Bitmap.Config.ARGB_8888
+            updateBitmap(bmp.copy(config, true))  // Copy để tránh reference chung
+            previewBitmap.postValue(null)
         }
     }
 
@@ -94,7 +108,6 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
     fun setProcessing(isLoading: Boolean) {
         isProcessing.postValue(isLoading)
     }
-
 
     override fun onCleared() {
         super.onCleared()

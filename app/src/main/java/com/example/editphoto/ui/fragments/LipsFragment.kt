@@ -1,5 +1,6 @@
 package com.example.editphoto.ui.fragments
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentLipsBinding
+import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.handleBackPressedCommon
+import com.example.editphoto.utils.handlePhysicalBackPress
 import com.example.editphoto.utils.toBitmap
 import com.example.editphoto.utils.toMat
 import com.example.editphoto.viewmodel.EditImageViewModel
@@ -31,11 +35,14 @@ import org.opencv.imgproc.Imgproc
 class LipsFragment : Fragment() {
 
     private lateinit var binding: FragmentLipsBinding
-    private val viewModel: EditImageViewModel by activityViewModels()
+    private lateinit var viewModel: EditImageViewModel
+
+    private var beforeEditBitmap: Bitmap? = null
+    private var hasApplied = false
 
     // Màu môi hiện tại (Scalar BGR)
-    private var selectedColor: Scalar = Scalar(0.0, 0.0, 255.0)
-    private var intensity: Float = 0.5f
+    private var selectedColor: Scalar = Scalar(233.0, 30.0, 99.0)
+    private var intensity: Float = 0.1f
 
     // Dữ liệu môi
     private var cachedLandmarks: List<NormalizedLandmark>? = null
@@ -54,13 +61,17 @@ class LipsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val act = requireActivity() as EditImageActivity
+        viewModel = act.viewModel
+
         initData()
         initView()
         initListener()
     }
 
     private fun initData() {
-
+        // Lưu lại ảnh hiện tại trước khi chỉnh môi
+        beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
     }
 
     private fun initView() {
@@ -82,21 +93,39 @@ class LipsFragment : Fragment() {
             selectedColor = Scalar(103.0, 58.0, 183.0); scheduleRealtimePreview()
         }
 
-        // Nút Lưu
-        binding.btnApply.setOnClickListener { applyFinalLipColor() }
+        // Nút Lưu (Apply tạm thời vào editedBitmap)
+        binding.btnApply.setOnClickListener {
+            viewModel.commitPreview()
+            hasApplied = true
+            beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+            parentFragmentManager.popBackStack()
+        }
+
 
         // Reset
         binding.btnReset.setOnClickListener {
-            viewModel.resetToOriginal()
-            cachedLandmarks = null
-            lipMask = null
-            lipRegion = null
-            baseMat = null
+            if (!hasApplied) {
+                beforeEditBitmap?.let {
+                    viewModel.setPreview(null)
+                    viewModel.updateBitmap(it)
+                }
+                cachedLandmarks = null
+                lipMask = null
+                lipRegion = null
+                baseMat = null
+            }
         }
         // Back
-        binding.btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
+        binding.btnBack.setOnClickListener {
+            val act = requireActivity() as EditImageActivity
+            handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
+        }
+        //Back vật lý
+        handlePhysicalBackPress { act ->
+            handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
+        }
 
-        // SeekBar realtime
+        // SeekBar realtime (preview)
         binding.lipsIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
                 intensity = progress / 100f
@@ -138,7 +167,7 @@ class LipsFragment : Fragment() {
         }
     }
 
-    /** Realtime preview */
+    /** Realtime preview (cập nhật vào previewBitmap) */
     private fun updateLipPreview() {
         lifecycleScope.launch(Dispatchers.Default) {
             prepareBaseIfNeeded()
@@ -150,24 +179,15 @@ class LipsFragment : Fragment() {
 
             val bitmapOut = preview.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.updateBitmap(bitmapOut)
+                viewModel.setPreview(bitmapOut)  // Sử dụng previewBitmap thay vì update trực tiếp editedBitmap
             }
         }
     }
 
-    /** Khi nhấn Áp dụng */
+    /** Khi nhấn Áp dụng (commit preview vào editedBitmap) */
     private fun applyFinalLipColor() {
-        lifecycleScope.launch(Dispatchers.Default) {
-            val bitmap = viewModel.editedBitmap.value ?: return@launch
-            val result = bitmap.applyLipColorFromLandmarks(
-                cachedLandmarks ?: return@launch,
-                selectedColor,
-                intensity
-            )
-            withContext(Dispatchers.Main) {
-                viewModel.updateBitmap(result)
-            }
-        }
+        viewModel.commitPreview()  // Commit preview thành editedBitmap để các fragment khác chỉnh tiếp
+        parentFragmentManager.popBackStack()  // Quay lại sau khi apply (tùy chọn)
     }
 
     // ==============================

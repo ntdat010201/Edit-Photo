@@ -71,5 +71,9 @@ dependencies {
     implementation ("androidx.camera:camera-video:1.3.0")
     implementation ("androidx.camera:camera-view:1.3.0")
 
+    //croper
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+
+
 }
 

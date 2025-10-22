@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import androidx.activity.addCallback
+import androidx.fragment.app.Fragment
+import com.example.editphoto.ui.activities.EditImageActivity
 
 /**
  * ==== HÀM DÙNG CHUNG CHO TẤT CẢ HIỆU ỨNG ====
@@ -40,4 +43,37 @@ fun Mat.blendWith(
     Core.addWeighted(this, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
     blended.copyTo(this, mask)
     return this
+}
+
+
+/**
+ * Bắt nút back vật lý và gọi hàm xử lý truyền vào.
+ * Dùng cho các fragment chỉnh ảnh (Lips, Eyes, Cut, Flip, v.v.)
+ */
+fun Fragment.handlePhysicalBackPress(action: (act: EditImageActivity) -> Unit) {
+    requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+        val act = requireActivity() as EditImageActivity
+        action(act)
+    }
+}
+
+/**
+ * Hàm xử lý logic Back chung cho Apply / Reset.
+ * Dùng cho cả Back UI và Back vật lý.
+ */
+fun Fragment.handleBackPressedCommon(
+    act: EditImageActivity,
+    hasApplied: Boolean,
+    beforeBitmap: android.graphics.Bitmap?,
+    onReset: (() -> Unit)? = null
+) {
+    val vm = act.viewModel
+    if (!hasApplied) {
+        beforeBitmap?.let {
+            vm.setPreview(null)
+            vm.updateBitmap(it)
+        }
+        onReset?.invoke()
+    }
+    parentFragmentManager.popBackStack()
 }

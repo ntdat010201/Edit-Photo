@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingVertical="@dimen/_16sdp"
+    android:background="#1A1A1A"
+    tools:context=".ui.fragments.CutFragment">
+
+    <TextView
+    android:id="@+id/tvCutTitle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Cắt tỷ lệ"
+    android:textSize="16sp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+    <HorizontalScrollView
+        android:layout_marginTop="@dimen/_12sdp"
+        android:id="@+id/constraint_radio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvCutTitle">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/radio11"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio11"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio11"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="1:1"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio34"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/radio11"
+                app:layout_constraintStart_toEndOf="@id/radio11"
+                app:layout_constraintTop_toTopOf="@id/radio11">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio34"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio34"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="3:4"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio43"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/radio34"
+                app:layout_constraintStart_toEndOf="@id/radio34"
+                app:layout_constraintTop_toTopOf="@id/radio34">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio43"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio43"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="4:3"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio916"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/radio43"
+                app:layout_constraintStart_toEndOf="@id/radio43"
+                app:layout_constraintTop_toTopOf="@id/radio43">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio916"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio916"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="9:16"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio169"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/radio916"
+                app:layout_constraintStart_toEndOf="@id/radio916"
+                app:layout_constraintTop_toTopOf="@id/radio916">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio169"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio169"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="16:9"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio75"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="@dimen/_50sdp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/radio169"
+                app:layout_constraintStart_toEndOf="@id/radio169"
+                app:layout_constraintTop_toTopOf="@id/radio169">
+
+                <ImageView
+                    android:id="@+id/ivIconRadio75"
+                    android:layout_width="@dimen/_18sdp"
+                    android:layout_height="@dimen/_18sdp"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvNameRadio75"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text="7:5"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </HorizontalScrollView>
+
+
+    <Button
+        android:layout_marginTop="@dimen/_8sdp"
+        android:id="@+id/btnApply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Áp dụng"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/constraint_radio" />
+
+    <Button
+        android:id="@+id/btnReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="reset"
+        app:layout_constraintBottom_toBottomOf="@id/btnApply"
+        app:layout_constraintEnd_toStartOf="@+id/btnBack"
+        app:layout_constraintStart_toEndOf="@+id/btnApply"
+        app:layout_constraintTop_toTopOf="@id/btnApply" />
+
+
+    <Button
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Quay lại"
+        app:layout_constraintBottom_toBottomOf="@id/btnApply"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnApply" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

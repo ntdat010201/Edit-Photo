@@ -1,5 +1,5 @@
 package com.example.editphoto.enums
 
 enum class FeatureType {
-    FACE,STICKER,RADIO
+    FACE,STICKER,ADJUST
 }

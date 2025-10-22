@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#151515"
+    android:background="#000000"
     tools:context=".ui.activities.EditImageActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -19,6 +19,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
+            android:id="@+id/img_back"
             android:layout_width="@dimen/_28sdp"
             android:layout_height="@dimen/_28sdp"
             android:src="@drawable/ic_back"
@@ -26,19 +27,46 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <ImageView
+            android:id="@+id/img_apply"
+            android:layout_width="@dimen/_28sdp"
+            android:layout_height="@dimen/_28sdp"
+            android:src="@drawable/ic_edit"
+            app:layout_constraintBottom_toBottomOf="@+id/img_back"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/img_back" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <ImageView
-        android:id="@+id/imgPreview"
+    <FrameLayout
+        android:id="@+id/framePreviewContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:padding="@dimen/_12sdp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/bg_mask"
         app:layout_constraintBottom_toTopOf="@+id/constraint_edit"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraint_tool" />
+        app:layout_constraintTop_toBottomOf="@+id/constraint_tool"
+        app:layout_constraintDimensionRatio="1:1">
+
+        <ImageView
+            android:id="@+id/imgPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000000"
+            android:scaleType="fitCenter"
+            android:src="@drawable/bg_mask" />
+
+        <com.canhub.cropper.CropImageView
+            android:id="@+id/cropImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:background="#000000"
+            android:scaleType="centerInside"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraint_edit"
@@ -54,17 +82,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
-                android:layout_marginStart="@dimen/_12sdp"
-                android:layout_marginVertical="@dimen/_6sdp"
                 android:id="@+id/img_back_edit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/_6sdp"
+                android:layout_marginStart="@dimen/_12sdp"
                 android:src="@drawable/ic_back"
                 app:layout_constraintBottom_toTopOf="@+id/rvSubOptions"
                 app:layout_constraintStart_toStartOf="parent"
@@ -98,8 +126,8 @@
             android:id="@+id/constraint_feature"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
@@ -109,7 +137,7 @@
                 android:layout_marginBottom="@dimen/_12sdp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
