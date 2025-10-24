@@ -12,16 +12,13 @@ import android.content.pm.PackageManager
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.example.editphoto.utils.Const.KEY_DENY_CAMERA
+import com.example.editphoto.utils.Const.KEY_DENY_GALLERY
 
 class PermissionManager(private val activity: Activity) {
 
     private val prefs: SharedPreferences =
         activity.getSharedPreferences("permission_prefs", Context.MODE_PRIVATE)
-
-    companion object {
-        private const val KEY_DENY_CAMERA = "deny_camera"
-        private const val KEY_DENY_GALLERY = "deny_gallery"
-    }
 
     private var onGrantedAction: (() -> Unit)? = null
 
@@ -43,20 +40,26 @@ class PermissionManager(private val activity: Activity) {
         onGranted: () -> Unit
     ) {
         onGrantedAction = onGranted
+
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED // cho Android 14+
+            )
         } else {
             arrayOf(
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         }
+
         handlePermissionRequest(
             permissions = permissions,
             launcher = launcher,
             isCamera = false
         )
     }
+
 
     private fun handlePermissionRequest(
         permissions: Array<String>,

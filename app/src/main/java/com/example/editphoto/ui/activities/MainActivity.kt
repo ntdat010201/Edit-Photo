@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
 import com.example.editphoto.base.BaseActivity
 import com.example.editphoto.databinding.ActivityMainBinding
 import com.example.editphoto.permission.PermissionManager
@@ -14,19 +15,12 @@ class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var permissionManager: PermissionManager
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
-    private var selectedUri: Uri? = null
-    private val pickImageLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let {
-                selectedUri = it
-                openEditActivity(it)
-            }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         initData()
         initListener()
     }
@@ -41,7 +35,6 @@ class MainActivity : BaseActivity() {
     }
 
     private fun initListener() {
-
         binding.constraintCamera.setOnClickListener {
             permissionManager.requestCameraPermission(permissionLauncher) {
                 openCamera()
@@ -49,7 +42,9 @@ class MainActivity : BaseActivity() {
         }
 
         binding.constraintGallery.setOnClickListener {
-            pickImageFromGallery()
+            permissionManager.requestGalleryPermission(permissionLauncher) {
+                startActivity(Intent(this, GalleryActivity::class.java))
+            }
         }
     }
 
@@ -58,15 +53,13 @@ class MainActivity : BaseActivity() {
         startActivity(intent)
     }
 
-
-
-    private fun openEditActivity(uri: Uri) {
-        val intent = Intent(this, EditImageActivity::class.java)
-        intent.putExtra("image_uri", uri.toString())
-        startActivity(intent)
+    override fun onStart() {
+        super.onStart()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+            v.setPadding(0, 0, 0, 0)
+            insets
+        }
+        hideSystemUiBar(window)
     }
 
-    private fun pickImageFromGallery() {
-        pickImageLauncher.launch("image/*")
-    }
 }

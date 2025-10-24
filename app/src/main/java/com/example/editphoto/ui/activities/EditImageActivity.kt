@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.editphoto.R
 import com.example.editphoto.adapter.MainFeaturesAdapter
@@ -29,6 +30,7 @@ import com.example.editphoto.ui.fragments.WhiteFragment
 import com.example.editphoto.utils.listAdjust
 import com.example.editphoto.utils.listAdjustSub
 import com.example.editphoto.utils.listFaceSub
+import com.example.editphoto.utils.showImageGlide
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
@@ -47,37 +49,25 @@ class EditImageActivity : BaseActivity() {
         binding = ActivityEditImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Init OpenCV
-        if (!OpenCVLoader.initDebug()) {
-            throw IllegalStateException("OpenCV failed to load")
-        }
-
-        // Init MediaPipe
-        setupFaceLandmarker()
-
         initData()
         initView()
         initListener()
         observeViewModel()
     }
 
-    private fun setupFaceLandmarker() {
-        val baseOptions = BaseOptions.builder()
-            .setModelAssetPath("face_landmarker.task") // Load từ assets
-            .build()
-        val options = FaceLandmarker.FaceLandmarkerOptions.builder()
-            .setBaseOptions(baseOptions)
-            .setRunningMode(RunningMode.IMAGE)
-            .setNumFaces(1)
-            .setOutputFaceBlendshapes(true)
-            .setMinFaceDetectionConfidence(0.5f)
-            .build()
-        faceLandmarker = FaceLandmarker.createFromOptions(this, options)
-        viewModel.setFaceLandmarker(faceLandmarker!!)
-    }
+
 
     private fun initData() {
+
+        // Init OpenCV
+        if (!OpenCVLoader.initDebug()) {
+            throw IllegalStateException("OpenCV failed to load")
+        }
+        // Init MediaPipe
+        setupFaceLandmarker()
+
         val uriString = intent.getStringExtra("image_uri")
+
         originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
         viewModel.setOriginalBitmap(originalBitmap!!)  // Sửa để dùng setOriginalBitmap
         binding.rvMainFeatures.apply {
@@ -89,7 +79,7 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun initView() {
-        binding.imgPreview.setImageBitmap(originalBitmap)
+        showImageGlide(this,originalBitmap!!,binding.imgPreview)
     }
 
     private fun observeViewModel() {
@@ -128,6 +118,21 @@ class EditImageActivity : BaseActivity() {
         binding.imgBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+    }
+
+    private fun setupFaceLandmarker() {
+        val baseOptions = BaseOptions.builder()
+            .setModelAssetPath("face_landmarker.task") // Load từ assets
+            .build()
+        val options = FaceLandmarker.FaceLandmarkerOptions.builder()
+            .setBaseOptions(baseOptions)
+            .setRunningMode(RunningMode.IMAGE)
+            .setNumFaces(1)
+            .setOutputFaceBlendshapes(true)
+            .setMinFaceDetectionConfidence(0.5f)
+            .build()
+        faceLandmarker = FaceLandmarker.createFromOptions(this, options)
+        viewModel.setFaceLandmarker(faceLandmarker!!)
     }
 
     private fun showSubOptionsAdjust(list: List<SubModel>, text: String) {
@@ -234,8 +239,19 @@ class EditImageActivity : BaseActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+            v.setPadding(0, 0, 0, 0)
+            insets
+        }
+        hideSystemUiBar(window)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        faceLandmarker?.close() // Đóng để tránh memory leak
+        faceLandmarker?.close()
     }
+
 }

@@ -1,12 +1,19 @@
 package com.example.editphoto.utils
 
+import android.content.Context
 import android.graphics.Bitmap
-import org.opencv.android.Utils
-import org.opencv.core.*
-import org.opencv.imgproc.Imgproc
+import android.net.Uri
+import android.widget.ImageView
 import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
+import com.example.editphoto.R
 import com.example.editphoto.ui.activities.EditImageActivity
+import org.opencv.android.Utils
+import org.opencv.core.Core
+import org.opencv.core.Mat
+import org.opencv.core.Size
+import org.opencv.imgproc.Imgproc
 
 /**
  * ==== HÀM DÙNG CHUNG CHO TẤT CẢ HIỆU ỨNG ====
@@ -77,3 +84,21 @@ fun Fragment.handleBackPressedCommon(
     }
     parentFragmentManager.popBackStack()
 }
+
+fun showImageGlide(context: Context, uri: Uri, view: ImageView) {
+    Glide.with(context)
+        .load(uri)
+        .placeholder(R.drawable.ic_gallery)
+        .error(R.drawable.img_view_gallery)
+        .into(view)
+}
+
+fun showImageGlide(context: Context, bitmap: Bitmap, view: ImageView) {
+    Glide.with(context)
+        .load(bitmap)
+        .placeholder(R.drawable.ic_gallery)
+        .error(R.drawable.img_view_gallery)
+        .into(view)
+}
+
+

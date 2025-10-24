@@ -1,60 +1,153 @@
 package com.example.editphoto.ui.fragments
 
+import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.editphoto.R
+import android.widget.SeekBar
+import androidx.activity.addCallback
+import androidx.fragment.app.Fragment
+import com.example.editphoto.databinding.FragmentTurnBinding
+import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.handleBackPressedCommon
+import com.example.editphoto.utils.handlePhysicalBackPress
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [TurnFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class TurnFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private lateinit var binding: FragmentTurnBinding
+    private var beforeRotateBitmap: Bitmap? = null
+
+    private var hasPreview = false
+    private var hasApplied = false
+    private var currentRotation = 0f
+    private var totalRotation = 0f
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_turn, container, false)
+    ): View {
+        binding = FragmentTurnBinding.inflate(inflater, container, false)
+        initSeekBar()
+        initListener()
+        /*handlePhysicalBackPress()*/
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment TurnFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            TurnFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    private fun initSeekBar() {
+        binding.ruler.max = 900
+        binding.ruler.progress = 450
+    }
+
+    private fun initListener() {
+        val act = requireActivity() as EditImageActivity
+        val vm = act.viewModel
+
+        beforeRotateBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+
+        binding.turn90.setOnClickListener {
+            totalRotation += 90f
+            val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
+            bitmap?.let {
+                val rotated = rotateBitmap(it, totalRotation + currentRotation)
+                vm.setPreview(rotated)
+                act.binding.imgPreview.setImageBitmap(rotated)
+                hasPreview = true
+                hasApplied = false
+            }
+        }
+
+        binding.ruler.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    currentRotation = (progress - 450) / 10f
+                    val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
+                    bitmap?.let {
+                        val rotated = rotateBitmap(it, totalRotation + currentRotation)
+                        vm.setPreview(rotated)
+                        act.binding.imgPreview.setImageBitmap(rotated)
+                        hasPreview = true
+                        hasApplied = false
+                    }
                 }
             }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        })
+
+        binding.btnApply.setOnClickListener {
+            vm.commitPreview()
+            beforeRotateBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+            hasPreview = false
+            hasApplied = true
+            totalRotation += currentRotation
+            currentRotation = 0f
+            binding.ruler.progress = 450
+            parentFragmentManager.popBackStack()
+        }
+
+        // RESET — hủy phần xoay
+        binding.btnReset.setOnClickListener {
+            if (hasPreview) {
+                beforeRotateBitmap?.let { originalBeforeRotate ->
+                    vm.setPreview(null)
+                    act.binding.imgPreview.setImageBitmap(originalBeforeRotate)
+                }
+                hasPreview = false
+                totalRotation = 0f
+                currentRotation = 0f
+                binding.ruler.progress = 450
+            }
+        }
+
+        binding.btnBack.setOnClickListener {
+            val act = requireActivity() as EditImageActivity
+            handleBackPressedCommon(act, hasApplied, beforeRotateBitmap)
+        }
+
+        handlePhysicalBackPress { act ->
+            handleBackPressedCommon(act, hasApplied, beforeRotateBitmap)
+        }
+    }
+
+    /*    Xử lý nút back vật lý giống btnBack
+    */
+    private fun handlePhysicalBackPress() {
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            val act = requireActivity() as EditImageActivity
+            handleBackPressed(act)
+        }
+    }
+
+    /** Hàm xử lý khi người dùng back (UI hoặc vật lý) */
+    private fun handleBackPressed(act: EditImageActivity) {
+        val vm = act.viewModel
+        if (!hasApplied && hasPreview) {
+            beforeRotateBitmap?.let { originalBeforeRotate ->
+                act.binding.imgPreview.setImageBitmap(originalBeforeRotate)
+            }
+            vm.setPreview(null)
+            totalRotation = 0f // Reset tổng góc xoay
+            currentRotation = 0f // Reset góc SeekBar
+            binding.ruler.progress = 450 // Reset SeekBar về giữa
+        }
+        parentFragmentManager.popBackStack()
+    }
+
+    /** Lấy bitmap hiện tại từ ImageView */
+    private fun getBitmapFromImageView(act: EditImageActivity): Bitmap? {
+        val drawable = act.binding.imgPreview.drawable
+        return if (drawable is BitmapDrawable) drawable.bitmap else null
+    }
+
+    /** Xoay ảnh với góc chỉ định */
+    private fun rotateBitmap(source: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix().apply {
+            postRotate(degrees, source.width / 2f, source.height / 2f)
+        }
+        return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
 }

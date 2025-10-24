@@ -4,19 +4,104 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:paddingVertical="@dimen/_16sdp"
     android:background="#1A1A1A"
+    android:paddingVertical="@dimen/_16sdp"
     tools:context=".ui.fragments.TurnFragment">
 
+
     <TextView
-        android:id="@+id/tvCutTitle"
+        android:id="@+id/tvTurnTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Cắt tỷ lệ"
+        android:text="Xoay"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_marginTop="@dimen/_12sdp"
+        android:id="@+id/constraint_Tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTurnTitle">
+
+
+
+        <LinearLayout
+            android:id="@+id/turn90"
+            android:layout_width="@dimen/_55sdp"
+            android:layout_height="@dimen/_50sdp"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/ivIconTurn90"
+                android:layout_width="@dimen/_18sdp"
+                android:layout_height="@dimen/_18sdp"
+                android:src="@drawable/ic_filter"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tvNameTurn90"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:text="Xoay 90"
+                android:textColor="@color/white"
+                android:textSize="8sp" />
+
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/ruler"
+            android:layout_marginStart="@dimen/_12sdp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/turn90"
+            app:layout_constraintStart_toEndOf="@+id/turn90"
+            app:layout_constraintBottom_toBottomOf="@+id/turn90"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:max="900"
+            android:progress="450"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <Button
+        android:layout_marginTop="@dimen/_8sdp"
+        android:id="@+id/btnApply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Áp dụng"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/constraint_Tools" />
+
+    <Button
+        android:id="@+id/btnReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="reset"
+        app:layout_constraintBottom_toBottomOf="@id/btnApply"
+        app:layout_constraintEnd_toStartOf="@+id/btnBack"
+        app:layout_constraintStart_toEndOf="@+id/btnApply"
+        app:layout_constraintTop_toTopOf="@id/btnApply" />
+
+
+    <Button
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Quay lại"
+        app:layout_constraintBottom_toBottomOf="@id/btnApply"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnApply" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

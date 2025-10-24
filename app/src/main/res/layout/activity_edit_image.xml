@@ -5,12 +5,11 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
+    android:background="#EFE6F9"
     tools:context=".ui.activities.EditImageActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraint_tool"
-
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/_12sdp"
@@ -19,6 +18,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
+            android:padding="@dimen/_2sdp"
             android:id="@+id/img_back"
             android:layout_width="@dimen/_28sdp"
             android:layout_height="@dimen/_28sdp"
@@ -28,10 +28,11 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
+            android:padding="@dimen/_2sdp"
             android:id="@+id/img_apply"
             android:layout_width="@dimen/_28sdp"
             android:layout_height="@dimen/_28sdp"
-            android:src="@drawable/ic_edit"
+            android:src="@drawable/ic_apply"
             app:layout_constraintBottom_toBottomOf="@+id/img_back"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/img_back" />
@@ -52,7 +53,7 @@
             android:id="@+id/imgPreview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#000000"
+            android:background="#FFFFFF"
             android:scaleType="fitCenter"
             android:src="@drawable/bg_mask" />
 
@@ -61,18 +62,49 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:adjustViewBounds="true"
-            android:background="#000000"
+            android:background="#FFFFFF"
             android:scaleType="centerInside"
             android:visibility="gone" />
 
     </FrameLayout>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginBottom="@dimen/_7sdp"
+        app:layout_constraintTop_toBottomOf="@+id/framePreviewContainer"
+        android:layout_marginEnd="@dimen/_12sdp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/back_next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_marginEnd="@dimen/_8sdp"
+            app:layout_constraintEnd_toStartOf="@+id/come_next"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:id="@+id/come_back"
+            android:src="@drawable/ic_come_back"
+            android:layout_width="@dimen/_18sdp"
+            android:layout_height="@dimen/_18sdp"/>
+
+
+        <ImageView
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:id="@+id/come_next"
+            android:src="@drawable/ic_come_next"
+            android:layout_width="@dimen/_18sdp"
+            android:layout_height="@dimen/_18sdp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraint_edit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1A1A1A"
+        android:background="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -131,10 +163,11 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginVertical="@dimen/_12sdp"
                 android:id="@+id/rvMainFeatures"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/_12sdp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
