@@ -70,7 +70,6 @@ class LipsFragment : Fragment() {
     }
 
     private fun initData() {
-        // Lưu lại ảnh hiện tại trước khi chỉnh môi
         beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
     }
 
@@ -79,7 +78,6 @@ class LipsFragment : Fragment() {
     }
 
     private fun initListener() {
-        // Các nút chọn màu
         binding.colorRed.setOnClickListener {
             selectedColor = Scalar(244.0, 67.0, 54.0); scheduleRealtimePreview()
         }
@@ -93,7 +91,7 @@ class LipsFragment : Fragment() {
             selectedColor = Scalar(103.0, 58.0, 183.0); scheduleRealtimePreview()
         }
 
-        // Nút Lưu (Apply tạm thời vào editedBitmap)
+
         binding.btnApply.setOnClickListener {
             viewModel.commitPreview()
             hasApplied = true
@@ -120,12 +118,12 @@ class LipsFragment : Fragment() {
             val act = requireActivity() as EditImageActivity
             handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
         }
-        //Back vật lý
+
         handlePhysicalBackPress { act ->
             handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
         }
 
-        // SeekBar realtime (preview)
+        // SeekBar realtime
         binding.lipsIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
                 intensity = progress / 100f
@@ -139,7 +137,6 @@ class LipsFragment : Fragment() {
     }
 
 
-    /** Đợi 1 chút để realtime mượt */
     private fun scheduleRealtimePreview() {
         applyJob?.cancel()
         applyJob = lifecycleScope.launch {
@@ -179,21 +176,18 @@ class LipsFragment : Fragment() {
 
             val bitmapOut = preview.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.setPreview(bitmapOut)  // Sử dụng previewBitmap thay vì update trực tiếp editedBitmap
+                viewModel.setPreview(bitmapOut)
             }
         }
     }
 
-    /** Khi nhấn Áp dụng (commit preview vào editedBitmap) */
     private fun applyFinalLipColor() {
-        viewModel.commitPreview()  // Commit preview thành editedBitmap để các fragment khác chỉnh tiếp
-        parentFragmentManager.popBackStack()  // Quay lại sau khi apply (tùy chọn)
+        viewModel.commitPreview()
+        parentFragmentManager.popBackStack()
     }
 
-    // ==============================
-    // === Các hàm xử lý môi riêng ===
-    // ==============================
 
+    //xử lý môi
     private fun createLipMaskAndRegion(
         bitmap: android.graphics.Bitmap,
         landmarks: List<NormalizedLandmark>

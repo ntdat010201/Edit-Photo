@@ -24,7 +24,6 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     private val KEY_SORT_TYPE = "sort_type"
     private val KEY_ASCENDING = "ascending"
 
-    // Trạng thái hiện tại
     private var _currentSortType: SortType
     private var _isAscending: Boolean
 
@@ -32,7 +31,6 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     val isAscending: Boolean get() = _isAscending
 
     init {
-        // Đọc trạng thái đã lưu
         _currentSortType = try {
             SortType.valueOf(prefs.getString(KEY_SORT_TYPE, SortType.DATE.name)!!)
         } catch (e: Exception) {
@@ -83,7 +81,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             }
 
             originalList = list
-            sortPhotos(_currentSortType, _isAscending) // Áp dụng lại sort đã lưu
+            sortPhotos(_currentSortType, _isAscending)
         }
     }
 
@@ -93,7 +91,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         _currentSortType = type
         _isAscending = ascending
 
-        // Lưu vào SharedPreferences
+        // Lưu SharedPreferences
         prefs.edit()
             .putString(KEY_SORT_TYPE, type.name)
             .putBoolean(KEY_ASCENDING, ascending)

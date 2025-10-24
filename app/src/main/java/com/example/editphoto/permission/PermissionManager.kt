@@ -44,7 +44,7 @@ class PermissionManager(private val activity: Activity) {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED // cho Android 14+
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED // Android 14+
             )
         } else {
             arrayOf(

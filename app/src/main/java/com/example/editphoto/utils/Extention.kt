@@ -15,9 +15,7 @@ import org.opencv.core.Mat
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
-/**
- * ==== HÀM DÙNG CHUNG CHO TẤT CẢ HIỆU ỨNG ====
- */
+
 
 /** Chuyển Bitmap → Mat */
 fun Bitmap.toMat(): Mat {
@@ -33,14 +31,12 @@ fun Mat.toBitmap(): Bitmap {
     return bmp
 }
 
-/** Làm mượt viền vùng chọn */
 fun Mat.smoothMask(blurSize: Double = 7.0, sigma: Double = 4.0): Mat {
     val blurred = Mat()
     Imgproc.GaussianBlur(this, blurred, Size(blurSize, blurSize), sigma)
     return blurred
 }
 
-/** Blend 2 ảnh theo tỷ lệ (dùng chung cho môi, má, da, mắt...) */
 fun Mat.blendWith(
     overlay: Mat,
     mask: Mat,
@@ -53,10 +49,7 @@ fun Mat.blendWith(
 }
 
 
-/**
- * Bắt nút back vật lý và gọi hàm xử lý truyền vào.
- * Dùng cho các fragment chỉnh ảnh (Lips, Eyes, Cut, Flip, v.v.)
- */
+
 fun Fragment.handlePhysicalBackPress(action: (act: EditImageActivity) -> Unit) {
     requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
         val act = requireActivity() as EditImageActivity
@@ -64,10 +57,7 @@ fun Fragment.handlePhysicalBackPress(action: (act: EditImageActivity) -> Unit) {
     }
 }
 
-/**
- * Hàm xử lý logic Back chung cho Apply / Reset.
- * Dùng cho cả Back UI và Back vật lý.
- */
+
 fun Fragment.handleBackPressedCommon(
     act: EditImageActivity,
     hasApplied: Boolean,

@@ -240,7 +240,6 @@ class CameraActivity : BaseActivity() {
     }
 
     private fun updateZoomUI(zoomRatio: Float) {
-        // Format giữ 1 số sau dấu chấm (1.0 -> 1x)
         fun formatZoom(value: Float): String {
             val formatted = String.format("%.1f", value)
             return if (formatted.endsWith(".0")) {
@@ -255,7 +254,6 @@ class CameraActivity : BaseActivity() {
 
         when {
             zoomRatio < 2f -> {
-                // Từ 1.0x đến 1.9x
                 binding.zoom1x.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
                 binding.zoom2x.background = ContextCompat.getDrawable(this, android.R.color.transparent)
                 zoomText1x.text = formatZoom(zoomRatio)
@@ -263,7 +261,6 @@ class CameraActivity : BaseActivity() {
             }
 
             zoomRatio in 2f..2.9f -> {
-                // Từ 2.0x đến 2.9x
                 binding.zoom1x.background = ContextCompat.getDrawable(this, android.R.color.transparent)
                 binding.zoom2x.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
                 zoomText1x.text = "1x"
@@ -271,7 +268,6 @@ class CameraActivity : BaseActivity() {
             }
 
             else -> {
-                // Từ 3.0x trở lên
                 binding.zoom1x.background = ContextCompat.getDrawable(this, android.R.color.transparent)
                 binding.zoom2x.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
                 zoomText1x.text = "1x"
@@ -285,12 +281,10 @@ class CameraActivity : BaseActivity() {
 
 
     private fun updateAspectRatioUI(aspectRatio: Int) {
-        // Mặc định tất cả về màu trắng (không được chọn)
         binding.constraintFull.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
         binding.constraint169.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
         binding.constraint43.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
 
-        // Cái nào được chọn thì set nền vàng
         when (aspectRatio) {
             ASPECT_RATIO_FULL -> {
                 binding.constraintFull.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
@@ -343,7 +337,7 @@ class CameraActivity : BaseActivity() {
                 constraintSet.setMargin(R.id.previewView, ConstraintSet.TOP, marginTopPx)
             }
 
-            else -> { // AspectRatio.RATIO_4_3
+            else -> { //4_3
                 constraintSet.clear(R.id.previewView, ConstraintSet.BOTTOM)
                 constraintSet.connect(R.id.previewView, ConstraintSet.TOP, R.id.main, ConstraintSet.TOP)
                 constraintSet.connect(R.id.previewView, ConstraintSet.BOTTOM, R.id.constrain_1, ConstraintSet.TOP)

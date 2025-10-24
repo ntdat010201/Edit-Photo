@@ -47,7 +47,7 @@ class EyesFragment : Fragment() {
     private var rightEyeCenter = Point()
     private var currentMode = "size"
 
-    // Lưu trạng thái từng công cụ
+    // Lưu trạng thái
     private val eyeParams = mutableMapOf(
         "size" to 0f,
         "height" to 0f,
@@ -77,7 +77,6 @@ class EyesFragment : Fragment() {
 
         prepareData()
 
-        // Click chọn công cụ
         binding.eyeSize.setOnClickListener { setupSeekBarForMode("size") }
         binding.eyeHeight.setOnClickListener { setupSeekBarForMode("height") }
         binding.eyeWidth.setOnClickListener { setupSeekBarForMode("width") }
@@ -85,7 +84,6 @@ class EyesFragment : Fragment() {
         binding.eyeDistance.setOnClickListener { setupSeekBarForMode("distance") }
         binding.eyeCorner.setOnClickListener { setupSeekBarForMode("corner") }
 
-        // Nút Apply
         binding.btnApply.setOnClickListener {
             viewModel.commitPreview()
             hasApplied = true
@@ -93,7 +91,6 @@ class EyesFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // Nút Back
         binding.btnBack.setOnClickListener {
             handleBackPressedCommon(
                 act,
@@ -168,7 +165,6 @@ class EyesFragment : Fragment() {
         })
     }
 
-    /** Đợi 1 chút để preview mượt */
     private fun scheduleRealtimePreview() {
         applyJob?.cancel()
         applyJob = lifecycleScope.launch {
@@ -220,7 +216,7 @@ class EyesFragment : Fragment() {
 
         val outBmp = Bitmap.createBitmap(result.cols(), result.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(result, outBmp)
-        viewModel.setPreview(outBmp)  // Cập nhật previewBitmap thay vì editedBitmap
+        viewModel.setPreview(outBmp)
 
         src.release()
         result.release()
@@ -230,12 +226,11 @@ class EyesFragment : Fragment() {
      * Khi nhấn Apply (commit preview vào editedBitmap)
      */
     private fun applyFinalEyeEffects() {
-        viewModel.commitPreview()  // Commit preview thành editedBitmap để các fragment khác chỉnh tiếp
-        parentFragmentManager.popBackStack()  // Quay lại sau khi apply
+        viewModel.commitPreview()
+        parentFragmentManager.popBackStack()
     }
 
-    // ====================================================
-    // =============== EYE SIZE ===========================
+    //EYE SIZE
     private fun radialZoomEye(src: Mat, dst: Mat, c: Point, R: Double, delta: Float) {
         if (abs(delta) < 0.001) return
         val k = delta * 0.2
@@ -259,8 +254,7 @@ class EyesFragment : Fragment() {
         roi.release(); warped.release()
     }
 
-    // ====================================================
-    // =============== HEIGHT / WIDTH =====================
+    //HEIGHT / WIDTH
     private fun stretchEyeVertical(src: Mat, dst: Mat, c: Point, R: Double, d: Float) {
         if (abs(d) < 0.001) return
         val s = d * 0.3
@@ -305,8 +299,7 @@ class EyesFragment : Fragment() {
         roi.release(); warped.release()
     }
 
-    // ====================================================
-    // =============== LOCATION / DISTANCE ================
+    // LOCATION / DISTANCE
     private fun moveEye(src: Mat, dst: Mat, c: Point, R: Double, shiftY: Double, shiftX: Double) {
         val rect = makeRect(src, c, R)
         val roi = Mat(src, rect)
@@ -328,15 +321,13 @@ class EyesFragment : Fragment() {
         roi.release(); warped.release()
     }
 
-    // ====================================================
-    // =============== CORNER (XOAY MẮT) ==================
+    // CORNER
     private fun rotateEye(dst: Mat, center: Point, R: Double, delta: Float, isRight: Boolean) {
         if (abs(delta) < 0.001) return
-        val angle = delta * 5 * if (isRight) 1 else -1 // ±10 độ, xoay ngược nhau
+        val angle = delta * 5 * if (isRight) 1 else -1
         val rect = makeRect(dst, center, R)
         val roi = Mat(dst, rect)
 
-        // Tạo ma trận xoay quanh tâm cục bộ
         val rotationMat = Imgproc.getRotationMatrix2D(
             Point(roi.width() / 2.0, roi.height() / 2.0),
             angle.toDouble(), 1.0
@@ -350,8 +341,7 @@ class EyesFragment : Fragment() {
         roi.release(); rotated.release()
     }
 
-    // ====================================================
-    // =============== UTILITIES ==========================
+    // UTILITIES
     private fun makeRect(src: Mat, c: Point, R: Double): Rect {
         return Rect(
             max(0, (c.x - R).toInt()),

@@ -58,18 +58,17 @@ class EditImageActivity : BaseActivity() {
 
 
     private fun initData() {
-
-        // Init OpenCV
+        //opencv
         if (!OpenCVLoader.initDebug()) {
             throw IllegalStateException("OpenCV failed to load")
         }
-        // Init MediaPipe
+        // mediaPipe
         setupFaceLandmarker()
 
         val uriString = intent.getStringExtra("image_uri")
 
         originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
-        viewModel.setOriginalBitmap(originalBitmap!!)  // Sửa để dùng setOriginalBitmap
+        viewModel.setOriginalBitmap(originalBitmap!!)
         binding.rvMainFeatures.apply {
             featuresAdapter = MainFeaturesAdapter(listAdjust)
             layoutManager =
@@ -111,7 +110,6 @@ class EditImageActivity : BaseActivity() {
             binding.constraintSub.visibility = View.GONE
         }
 
-        // Thêm listener cho img_apply (giả sử bạn có ID là img_apply trong layout)
         binding.imgApply.setOnClickListener {
             saveEditedImageToGallery()
         }
@@ -122,7 +120,7 @@ class EditImageActivity : BaseActivity() {
 
     private fun setupFaceLandmarker() {
         val baseOptions = BaseOptions.builder()
-            .setModelAssetPath("face_landmarker.task") // Load từ assets
+            .setModelAssetPath("face_landmarker.task") // Load assets
             .build()
         val options = FaceLandmarker.FaceLandmarkerOptions.builder()
             .setBaseOptions(baseOptions)
@@ -201,7 +199,7 @@ class EditImageActivity : BaseActivity() {
         binding.imgPreview.visibility = View.GONE
         binding.cropImageView.visibility = View.VISIBLE
 
-        // Set ảnh hiện tại vào crop view
+        // crop view
         viewModel.editedBitmap.value?.let {
             binding.cropImageView.setImageBitmap(it)
             binding.cropImageView.setFixedAspectRatio(true)
@@ -213,7 +211,6 @@ class EditImageActivity : BaseActivity() {
         binding.imgPreview.visibility = View.VISIBLE
     }
 
-    /** Hàm lưu ảnh editedBitmap vào bộ nhớ máy (Gallery) */
     private fun saveEditedImageToGallery() {
         viewModel.editedBitmap.value?.let { bitmap ->
             val contentValues = ContentValues().apply {
@@ -233,7 +230,6 @@ class EditImageActivity : BaseActivity() {
                 contentResolver.openOutputStream(it).use { outputStream ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream!!)
                 }
-                // Thông báo cho user (Toast hoặc Dialog)
                 Toast.makeText(this, "Ảnh đã lưu vào Gallery", Toast.LENGTH_SHORT).show()
             }
         }

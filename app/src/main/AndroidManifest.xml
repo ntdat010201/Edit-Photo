@@ -28,16 +28,25 @@
         tools:targetApi="31">
         <activity
             android:name=".ui.activities.GalleryActivity"
-            android:exported="false" />
+            android:screenOrientation="sensorPortrait"
+            android:exported="false"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.activities.CameraActivity"
-            android:exported="false" />
+            android:screenOrientation="sensorPortrait"
+            android:exported="false"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
+            />
         <activity
             android:name=".ui.activities.EditImageActivity"
-            android:exported="false" />
+            android:screenOrientation="sensorPortrait"
+            android:exported="false"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.activities.MainActivity"
-            android:exported="true">
+            android:screenOrientation="sensorPortrait"
+            android:exported="true"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

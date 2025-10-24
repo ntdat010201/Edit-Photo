@@ -168,7 +168,6 @@ class GalleryActivity : BaseActivity() {
             elevation = 8f
             setBackgroundDrawable(0.toDrawable())
 
-            // Đảm bảo click trong popup vẫn hoạt động
             setTouchInterceptor { _, event ->
                 if (event.action == android.view.MotionEvent.ACTION_OUTSIDE) {
                     dismiss()

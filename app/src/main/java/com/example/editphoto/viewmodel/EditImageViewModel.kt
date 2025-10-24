@@ -13,35 +13,24 @@ import kotlinx.coroutines.withContext
 
 class EditImageViewModel(application: Application) : AndroidViewModel(application) {
 
-    /** Ảnh gốc (ban đầu load vào) */
     val originalBitmap = MutableLiveData<Bitmap>()
 
-    /** Ảnh đang chỉnh sửa thật (Apply xong) */
     val editedBitmap = MutableLiveData<Bitmap>()
 
-    /** Ảnh preview tạm thời (chưa Apply, chỉ hiển thị khi kéo SeekBar) */
+    // Ảnh preview tạm
     val previewBitmap = MutableLiveData<Bitmap?>()
 
-    /** FaceLandmarker (MediaPipe) - khởi tạo 1 lần dùng chung */
+    // FaceLandmarker (MediaPipe)
     private var faceLandmarker: FaceLandmarker? = null
 
-    /** Cờ xử lý để UI biết đang loading */
     val isProcessing = MutableLiveData(false)
 
-    // ---------------------------
-    // ====== HÀM CHÍNH ======
-    // ---------------------------
 
-    /**
-     * Cập nhật ảnh hiện tại (realtime hiển thị - ảnh thật)
-     */
     fun updateBitmap(bitmap: Bitmap) {
         editedBitmap.postValue(bitmap)
     }
 
-    /**
-     * Set ảnh gốc khi user vừa chọn ảnh
-     */
+
     fun setOriginalBitmap(bitmap: Bitmap) {
         val config = bitmap.config ?: Bitmap.Config.ARGB_8888
         val safeBitmap = bitmap.copy(config, true)
@@ -49,9 +38,6 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         editedBitmap.value = safeBitmap.copy(config, true)
     }
 
-    /**
-     * Reset ảnh về gốc
-     */
     fun resetToOriginal() {
         originalBitmap.value?.let { bmp ->
             val config = bmp.config ?: Bitmap.Config.ARGB_8888
@@ -60,16 +46,11 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         previewBitmap.postValue(null)
     }
 
-    /**
-     * Đặt ảnh preview tạm thời
-     */
+
     fun setPreview(bitmap: Bitmap?) {
         previewBitmap.postValue(bitmap)
     }
 
-    /**
-     * Commit preview thành ảnh thật (khi người dùng nhấn Apply)
-     */
     fun commitPreview() {
         previewBitmap.value?.let { bmp ->
             val config = bmp.config ?: Bitmap.Config.ARGB_8888
@@ -78,21 +59,13 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /**
-     * Set hoặc update FaceLandmarker
-     */
+
     fun setFaceLandmarker(landmarker: FaceLandmarker) {
         faceLandmarker = landmarker
     }
 
-    /**
-     * Lấy FaceLandmarker hiện có
-     */
     fun getFaceLandmarker(): FaceLandmarker? = faceLandmarker
 
-    /**
-     * Dò landmarks trên ảnh (nếu cần)
-     */
     suspend fun detectFaceLandmarks(bitmap: Bitmap): FaceLandmarkerResult? {
         return withContext(Dispatchers.Default) {
             faceLandmarker?.let {
@@ -102,9 +75,7 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /**
-     * Đặt trạng thái đang xử lý (để hiển thị progress)
-     */
+
     fun setProcessing(isLoading: Boolean) {
         isProcessing.postValue(isLoading)
     }

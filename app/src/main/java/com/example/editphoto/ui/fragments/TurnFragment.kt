@@ -89,7 +89,6 @@ class TurnFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // RESET — hủy phần xoay
         binding.btnReset.setOnClickListener {
             if (hasPreview) {
                 beforeRotateBitmap?.let { originalBeforeRotate ->
@@ -113,8 +112,6 @@ class TurnFragment : Fragment() {
         }
     }
 
-    /*    Xử lý nút back vật lý giống btnBack
-    */
     private fun handlePhysicalBackPress() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             val act = requireActivity() as EditImageActivity
@@ -122,7 +119,6 @@ class TurnFragment : Fragment() {
         }
     }
 
-    /** Hàm xử lý khi người dùng back (UI hoặc vật lý) */
     private fun handleBackPressed(act: EditImageActivity) {
         val vm = act.viewModel
         if (!hasApplied && hasPreview) {
@@ -130,20 +126,18 @@ class TurnFragment : Fragment() {
                 act.binding.imgPreview.setImageBitmap(originalBeforeRotate)
             }
             vm.setPreview(null)
-            totalRotation = 0f // Reset tổng góc xoay
-            currentRotation = 0f // Reset góc SeekBar
-            binding.ruler.progress = 450 // Reset SeekBar về giữa
+            totalRotation = 0f
+            currentRotation = 0f
+            binding.ruler.progress = 450
         }
         parentFragmentManager.popBackStack()
     }
 
-    /** Lấy bitmap hiện tại từ ImageView */
     private fun getBitmapFromImageView(act: EditImageActivity): Bitmap? {
         val drawable = act.binding.imgPreview.drawable
         return if (drawable is BitmapDrawable) drawable.bitmap else null
     }
 
-    /** Xoay ảnh với góc chỉ định */
     private fun rotateBitmap(source: Bitmap, degrees: Float): Bitmap {
         val matrix = Matrix().apply {
             postRotate(degrees, source.width / 2f, source.height / 2f)

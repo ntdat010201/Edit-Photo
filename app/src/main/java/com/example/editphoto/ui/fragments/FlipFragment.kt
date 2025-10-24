@@ -15,9 +15,9 @@ import com.example.editphoto.ui.activities.EditImageActivity
 class FlipFragment : Fragment() {
 
     private lateinit var binding: FragmentFlipBinding
-    private var beforeFlipBitmap: Bitmap? = null // Ảnh trước khi lật
-    private var hasPreview = false                // Đang preview lật hay không
-    private var hasApplied = false                // Đã apply chưa
+    private var beforeFlipBitmap: Bitmap? = null
+    private var hasPreview = false
+    private var hasApplied = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -33,10 +33,8 @@ class FlipFragment : Fragment() {
         val act = requireActivity() as EditImageActivity
         val vm = act.viewModel
 
-        // Lưu lại ảnh hiện tại (trước khi lật)
         beforeFlipBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
 
-        // 🔹 Lật ngang
         binding.flipHorizontal.setOnClickListener {
             val bitmap = vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
             bitmap?.let {
@@ -48,7 +46,6 @@ class FlipFragment : Fragment() {
             }
         }
 
-        // 🔹 Lật dọc
         binding.flipVertical.setOnClickListener {
             val bitmap = vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
             bitmap?.let {
@@ -60,16 +57,14 @@ class FlipFragment : Fragment() {
             }
         }
 
-        // 🔹 APPLY — lưu ảnh lật thành ảnh chính
         binding.btnApply.setOnClickListener {
             vm.commitPreview()
             beforeFlipBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
             hasPreview = false
             hasApplied = true
-            parentFragmentManager.popBackStack() // Quay lại
+            parentFragmentManager.popBackStack()
         }
 
-        // 🔹 RESET — hủy phần lật (giữ môi, sáng, màu, v.v.)
         binding.btnReset.setOnClickListener {
             if (hasPreview) {
                 beforeFlipBitmap?.let { originalBeforeFlip ->
@@ -80,13 +75,11 @@ class FlipFragment : Fragment() {
             }
         }
 
-        // 🔹 BACK UI — như back vật lý
         binding.btnBack.setOnClickListener {
             handleBackPressed(act)
         }
     }
 
-    /** Xử lý nút back vật lý giống btnBack */
     private fun handlePhysicalBackPress() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             val act = requireActivity() as EditImageActivity
@@ -94,7 +87,6 @@ class FlipFragment : Fragment() {
         }
     }
 
-    /** Hàm xử lý khi người dùng back (UI hoặc vật lý) */
     private fun handleBackPressed(act: EditImageActivity) {
         val vm = act.viewModel
         if (!hasApplied && hasPreview) {
@@ -106,13 +98,11 @@ class FlipFragment : Fragment() {
         parentFragmentManager.popBackStack()
     }
 
-    /** Lấy bitmap hiện tại từ ImageView */
     private fun getBitmapFromImageView(act: EditImageActivity): Bitmap? {
         val drawable = act.binding.imgPreview.drawable
         return if (drawable is BitmapDrawable) drawable.bitmap else null
     }
 
-    /** Lật quanh tâm ảnh (chuẩn, không bị lệch) */
     private fun flipBitmap(source: Bitmap, horizontal: Boolean): Bitmap {
         val matrix = Matrix().apply {
             if (horizontal) {
