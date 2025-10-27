@@ -176,14 +176,15 @@ class LipsFragment : Fragment() {
 
             val bitmapOut = preview.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.setPreview(bitmapOut)
+                viewModel.setPreview(bitmapOut)  // Sử dụng previewBitmap thay vì update trực tiếp editedBitmap
             }
         }
     }
 
+    /** Khi nhấn Áp dụng (commit preview vào editedBitmap) */
     private fun applyFinalLipColor() {
-        viewModel.commitPreview()
-        parentFragmentManager.popBackStack()
+        viewModel.commitPreview()  //
+        parentFragmentManager.popBackStack()  // Quay lại sau khi apply (tùy chọn)
     }
 
 

@@ -2,11 +2,12 @@ package com.example.editphoto.ui.activities
 
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Size
 import android.util.TypedValue
-import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.TextView
 import android.widget.Toast
@@ -17,11 +18,14 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.R
 import com.example.editphoto.base.BaseActivity
 import com.example.editphoto.databinding.ActivityCameraBinding
@@ -29,6 +33,9 @@ import com.example.editphoto.utils.Const.ASPECT_RATIO_FULL
 import com.example.editphoto.utils.Const.MAX_ZOOM_RATIO
 import com.example.editphoto.utils.showImageGlide
 import com.example.editphoto.viewmodel.CameraViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CameraActivity : BaseActivity() {
     private lateinit var binding: ActivityCameraBinding
@@ -42,8 +49,6 @@ class CameraActivity : BaseActivity() {
         binding = ActivityCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
-
         initData()
         initView()
         initListener()
@@ -54,6 +59,8 @@ class CameraActivity : BaseActivity() {
         updateZoomState(1f)
         updateAspectRatioUI(viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3)
         updateFlashUI(viewModel.flashMode.value ?: ImageCapture.FLASH_MODE_OFF)
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
+
     }
 
     private fun initView() {
@@ -66,15 +73,16 @@ class CameraActivity : BaseActivity() {
         viewModel.cameraSelector.observe(this) {
             startCamera()
             if (viewModel.cameraSelector.value == CameraSelector.DEFAULT_FRONT_CAMERA &&
-                viewModel.flashMode.value == ImageCapture.FLASH_MODE_ON) {
+                viewModel.flashMode.value == ImageCapture.FLASH_MODE_ON
+            ) {
                 viewModel.disableFlash()
                 updateFlashUI(ImageCapture.FLASH_MODE_OFF)
                 Toast.makeText(this, "Camera trước không hỗ trợ flash!", Toast.LENGTH_SHORT).show()
             }
         }
 
+        // Chỉ cập nhật preview, không restart camera
         viewModel.aspectRatio.observe(this) { ratio ->
-            startCamera()
             updatePreviewViewAspectRatio(ratio)
         }
 
@@ -85,12 +93,9 @@ class CameraActivity : BaseActivity() {
     }
 
     private fun initListener() {
-        binding.btnCapture.setOnClickListener {
-            takePhoto()
-        }
-        binding.flipCamera.setOnClickListener {
-            viewModel.flipCamera()
-        }
+        binding.btnCapture.setOnClickListener { takePhoto() }
+        binding.flipCamera.setOnClickListener { viewModel.flipCamera() }
+
         binding.imgCamera.setOnClickListener {
             val imageUri = viewModel.imageUri.value
             if (imageUri != null) {
@@ -112,6 +117,12 @@ class CameraActivity : BaseActivity() {
             updateZoomUI(2f)
         }
 
+        binding.previewView.setOnTouchListener { _, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            true
+        }
+
+        // Đổi tỷ lệ nhưng không restart camera
         binding.constraintFull.setOnClickListener {
             viewModel.setAspectRatio(ASPECT_RATIO_FULL)
             updateAspectRatioUI(ASPECT_RATIO_FULL)
@@ -136,11 +147,6 @@ class CameraActivity : BaseActivity() {
                 Toast.makeText(this, "Thiết bị không hỗ trợ flash!", Toast.LENGTH_SHORT).show()
             }
         }
-
-        binding.previewView.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            true
-        }
     }
 
     private fun startCamera() {
@@ -149,25 +155,22 @@ class CameraActivity : BaseActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder()
-                .apply {
-                    if (viewModel.aspectRatio.value != ASPECT_RATIO_FULL) {
-                        setTargetAspectRatio(viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3)
-                    }
-                }
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(binding.previewView.surfaceProvider)
+            }
+
+            val resolutionSelector = ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
+                )
                 .build()
-                .also {
-                    it.setSurfaceProvider(binding.previewView.surfaceProvider)
-                }
 
             imageCapture = ImageCapture.Builder()
+                .setResolutionSelector(resolutionSelector)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .apply {
-                    if (viewModel.aspectRatio.value != ASPECT_RATIO_FULL) {
-                        setTargetAspectRatio(viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3)
-                    }
-                }
                 .setFlashMode(viewModel.flashMode.value ?: ImageCapture.FLASH_MODE_OFF)
+                .setTargetRotation(binding.previewView.display.rotation)
+                .setJpegQuality(100)
                 .build()
 
             try {
@@ -179,8 +182,7 @@ class CameraActivity : BaseActivity() {
                     imageCapture
                 )
                 Log.d("CameraActivity", "Flash available: ${camera?.cameraInfo?.hasFlashUnit()}")
-                val currentZoom = viewModel.zoomState.value ?: 1f
-                updateZoomState(currentZoom)
+                updateZoomState(viewModel.zoomState.value ?: 1f)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -194,16 +196,14 @@ class CameraActivity : BaseActivity() {
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "$fileName.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/EditPhoto")
         }
 
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(
-                contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-            ).build()
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(
+            contentResolver,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            contentValues
+        ).build()
 
         imageCapture.takePicture(
             outputOptions,
@@ -211,21 +211,57 @@ class CameraActivity : BaseActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exception: ImageCaptureException) {
                     exception.printStackTrace()
-                    Toast.makeText(this@CameraActivity, "Lưu ảnh thất bại!", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(this@CameraActivity, "Lưu ảnh thất bại!", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val savedUri = outputFileResults.savedUri
-                    Toast.makeText(
-                        this@CameraActivity,
-                        "Ảnh đã lưu vào Pictures/EditPhoto",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    viewModel.setImageUri(savedUri.toString())
+                    val savedUri = outputFileResults.savedUri ?: return
+                    val ratio = viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, savedUri)
+                            val cropped = cropBitmapToRatio(bitmap, ratio)
+                            val out = contentResolver.openOutputStream(savedUri)
+                            out?.let { cropped.compress(Bitmap.CompressFormat.JPEG, 100, it) }
+                            out?.close()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@CameraActivity,
+                                "Ảnh đã lưu vào Pictures/EditPhoto",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.setImageUri(savedUri.toString())
+                        }
+                    }
                 }
             }
         )
+    }
+
+    private fun cropBitmapToRatio(bitmap: Bitmap, aspectRatio: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        val targetRatio = when (aspectRatio) {
+            AspectRatio.RATIO_16_9 -> 9f / 16f
+            ASPECT_RATIO_FULL -> height.toFloat() / width // full màn giữ nguyên
+            else -> 3f / 4f
+        }
+
+        val currentRatio = width.toFloat() / height.toFloat()
+        return if (currentRatio > targetRatio) {
+            val newWidth = (height * targetRatio).toInt()
+            val xOffset = (width - newWidth) / 2
+            Bitmap.createBitmap(bitmap, xOffset, 0, newWidth, height)
+        } else {
+            val newHeight = (width / targetRatio).toInt()
+            val yOffset = (height - newHeight) / 2
+            Bitmap.createBitmap(bitmap, 0, yOffset, width, newHeight)
+        }
     }
 
     private fun updateZoomState(zoomRatio: Float) {
@@ -242,11 +278,7 @@ class CameraActivity : BaseActivity() {
     private fun updateZoomUI(zoomRatio: Float) {
         fun formatZoom(value: Float): String {
             val formatted = String.format("%.1f", value)
-            return if (formatted.endsWith(".0")) {
-                formatted.dropLast(2) + "x"
-            } else {
-                "$formatted"+"x"
-            }
+            return if (formatted.endsWith(".0")) formatted.dropLast(2) + "x" else "$formatted" + "x"
         }
 
         val zoomText1x = binding.zoom1x.findViewById<TextView>(R.id.zoomText1x)
@@ -259,14 +291,6 @@ class CameraActivity : BaseActivity() {
                 zoomText1x.text = formatZoom(zoomRatio)
                 zoomText2x.text = "2x"
             }
-
-            zoomRatio in 2f..2.9f -> {
-                binding.zoom1x.background = ContextCompat.getDrawable(this, android.R.color.transparent)
-                binding.zoom2x.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
-                zoomText1x.text = "1x"
-                zoomText2x.text = formatZoom(zoomRatio)
-            }
-
             else -> {
                 binding.zoom1x.background = ContextCompat.getDrawable(this, android.R.color.transparent)
                 binding.zoom2x.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
@@ -276,37 +300,24 @@ class CameraActivity : BaseActivity() {
         }
     }
 
-
-
-
-
     private fun updateAspectRatioUI(aspectRatio: Int) {
         binding.constraintFull.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
         binding.constraint169.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
         binding.constraint43.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
 
         when (aspectRatio) {
-            ASPECT_RATIO_FULL -> {
-                binding.constraintFull.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
-            }
-            AspectRatio.RATIO_16_9 -> {
-                binding.constraint169.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
-            }
-            AspectRatio.RATIO_4_3 -> {
-                binding.constraint43.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
-            }
+            ASPECT_RATIO_FULL -> binding.constraintFull.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
+            AspectRatio.RATIO_16_9 -> binding.constraint169.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
+            AspectRatio.RATIO_4_3 -> binding.constraint43.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
         }
     }
 
-
     private fun updateFlashUI(flashMode: Int) {
         if (flashMode == ImageCapture.FLASH_MODE_ON) {
-            binding.constraintFlash.background =
-                ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
+            binding.constraintFlash.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_yellow)
             binding.imgFlash.setImageResource(R.drawable.ic_flash_on)
         } else {
-            binding.constraintFlash.background =
-                ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
+            binding.constraintFlash.background = ContextCompat.getDrawable(this, R.drawable.circle_bgr_white)
             binding.imgFlash.setImageResource(R.drawable.ic_flash_off)
         }
     }
@@ -330,22 +341,18 @@ class CameraActivity : BaseActivity() {
                 constraintSet.connect(R.id.previewView, ConstraintSet.BOTTOM, R.id.constrain_1, ConstraintSet.BOTTOM)
                 constraintSet.setDimensionRatio(R.id.previewView, "9:16")
                 val marginTopPx = TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_DIP,
-                    30f,
-                    binding.root.resources.displayMetrics
+                    TypedValue.COMPLEX_UNIT_DIP, 30f, binding.root.resources.displayMetrics
                 ).toInt()
                 constraintSet.setMargin(R.id.previewView, ConstraintSet.TOP, marginTopPx)
             }
 
-            else -> { //4_3
+            else -> { // 4:3
                 constraintSet.clear(R.id.previewView, ConstraintSet.BOTTOM)
                 constraintSet.connect(R.id.previewView, ConstraintSet.TOP, R.id.main, ConstraintSet.TOP)
                 constraintSet.connect(R.id.previewView, ConstraintSet.BOTTOM, R.id.constrain_1, ConstraintSet.TOP)
                 constraintSet.setDimensionRatio(R.id.previewView, "3:4")
                 val marginTopPx = TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_DIP,
-                    30f,
-                    binding.root.resources.displayMetrics
+                    TypedValue.COMPLEX_UNIT_DIP, 30f, binding.root.resources.displayMetrics
                 ).toInt()
                 constraintSet.setMargin(R.id.previewView, ConstraintSet.TOP, marginTopPx)
             }
@@ -369,9 +376,9 @@ class CameraActivity : BaseActivity() {
         }
     }
 
+
     override fun onStart() {
         super.onStart()
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             v.setPadding(0, 0, 0, 0)
             insets
