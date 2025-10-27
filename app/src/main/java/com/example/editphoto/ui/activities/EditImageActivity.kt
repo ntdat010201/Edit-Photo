@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSnapHelper
 import com.example.editphoto.R
 import com.example.editphoto.adapter.MainFeaturesAdapter
 import com.example.editphoto.adapter.SubOptionsAdapter
@@ -32,6 +33,9 @@ import com.example.editphoto.utils.listAdjustSub
 import com.example.editphoto.utils.listFaceSub
 import com.example.editphoto.utils.showImageGlide
 import com.example.editphoto.viewmodel.EditImageViewModel
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
@@ -56,7 +60,6 @@ class EditImageActivity : BaseActivity() {
     }
 
 
-
     private fun initData() {
         //opencv
         if (!OpenCVLoader.initDebug()) {
@@ -69,6 +72,7 @@ class EditImageActivity : BaseActivity() {
 
         originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
         viewModel.setOriginalBitmap(originalBitmap!!)
+
         binding.rvMainFeatures.apply {
             featuresAdapter = MainFeaturesAdapter(listAdjust)
             layoutManager =
@@ -78,8 +82,16 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun initView() {
-        showImageGlide(this,originalBitmap!!,binding.imgPreview)
+        showImageGlide(this, originalBitmap!!, binding.imgPreview)
+
+
+        showSubOptionsAdjust(listAdjustSub)
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.editContainer, CutFragment())
+            .commit()
     }
+
 
     private fun observeViewModel() {
         viewModel.editedBitmap.observe(this) { bitmap ->
@@ -98,16 +110,10 @@ class EditImageActivity : BaseActivity() {
     private fun initListener() {
         featuresAdapter.onItemClick = { item ->
             when (item.type) {
-                FeatureType.ADJUST -> showSubOptionsAdjust(listAdjustSub, item.text)
-                FeatureType.FACE -> showSubOptionsFace(listFaceSub, item.text)
-                FeatureType.STICKER -> showSubOptionsFace(listFaceSub, item.text)
+                FeatureType.ADJUST -> showSubOptionsAdjust(listAdjustSub)
+                FeatureType.FACE -> showSubOptionsFace(listFaceSub)
+                FeatureType.STICKER -> showSubOptionsFace(listFaceSub)
             }
-        }
-
-        binding.imgBackEdit.setOnClickListener {
-            binding.constraintFeature.visibility = View.VISIBLE
-            binding.constraintTool.visibility = View.VISIBLE
-            binding.constraintSub.visibility = View.GONE
         }
 
         binding.imgApply.setOnClickListener {
@@ -133,16 +139,21 @@ class EditImageActivity : BaseActivity() {
         viewModel.setFaceLandmarker(faceLandmarker!!)
     }
 
-    private fun showSubOptionsAdjust(list: List<SubModel>, text: String) {
-        binding.constraintFeature.visibility = View.GONE
-        binding.constraintTool.visibility = View.GONE
-        binding.constraintSub.visibility = View.VISIBLE
-        binding.tvNameEdit.text = text
+    private fun showSubOptionsAdjust(list: List<SubModel>) {
 
         val subAdapter = SubOptionsAdapter(list)
+
         binding.rvSubOptions.apply {
-            layoutManager =
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = if (list.size <= 5) {
+                FlexboxLayoutManager(this@EditImageActivity).apply {
+                    flexDirection = FlexDirection.ROW
+                    justifyContent = JustifyContent.SPACE_BETWEEN
+                }
+            } else {
+                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false).also {
+                    LinearSnapHelper().attachToRecyclerView(this@apply)
+                }
+            }
             adapter = subAdapter
         }
 
@@ -163,19 +174,22 @@ class EditImageActivity : BaseActivity() {
         }
     }
 
-    private fun showSubOptionsFace(list: List<SubModel>, text: String) {
-        binding.constraintFeature.visibility = View.GONE
-        binding.constraintTool.visibility = View.GONE
-        binding.constraintSub.visibility = View.VISIBLE
-        binding.tvNameEdit.text = text
+    private fun showSubOptionsFace(list: List<SubModel>) {
 
         val subAdapter = SubOptionsAdapter(list)
+
         binding.rvSubOptions.apply {
-            layoutManager =
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
+            if (list.size <= 5) {
+                layoutManager = FlexboxLayoutManager(context).apply {
+                    flexDirection = FlexDirection.ROW
+                    justifyContent = JustifyContent.SPACE_BETWEEN
+                }
+            } else {
+                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                LinearSnapHelper().attachToRecyclerView(this)
+            }
             adapter = subAdapter
         }
-
         subAdapter.onItemClick = { item ->
             val fragment = when (item.type) {
                 SubType.LIPS -> LipsFragment()

@@ -35,8 +35,9 @@ class FlipFragment : Fragment() {
 
         beforeFlipBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
 
-        binding.flipHorizontal.setOnClickListener {
-            val bitmap = vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
+        binding.constraintHorizontal.setOnClickListener {
+            val bitmap =
+                vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
             bitmap?.let {
                 val flipped = flipBitmap(it, horizontal = true)
                 vm.setPreview(flipped)
@@ -46,8 +47,9 @@ class FlipFragment : Fragment() {
             }
         }
 
-        binding.flipVertical.setOnClickListener {
-            val bitmap = vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
+        binding.constraintVertical.setOnClickListener {
+            val bitmap =
+                vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
             bitmap?.let {
                 val flipped = flipBitmap(it, horizontal = false)
                 vm.setPreview(flipped)

@@ -1,19 +1,24 @@
 package com.example.editphoto.adapter
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.example.editphoto.databinding.ItemToolsBinding
+import com.example.editphoto.R
+import com.example.editphoto.databinding.ItemSubBinding
+import com.example.editphoto.model.AdjustModel
 import com.example.editphoto.model.SubModel
 
 class SubOptionsAdapter(
     private val list: List<SubModel>
 ) : RecyclerView.Adapter<SubOptionsAdapter.ViewHolder>() {
-
     var onItemClick: ((SubModel) -> Unit)? = null
 
+     var selectedPosition = -1
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemToolsBinding.inflate(
+        val binding = ItemSubBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
@@ -23,15 +28,28 @@ class SubOptionsAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = list[position]
-        holder.binding.ivIcon.setImageResource(item.icon)
-        holder.binding.tvName.text = item.text
+        val context = holder.itemView.context
+        holder.binding.tvSub.text = item.text
+
+        if (position == selectedPosition) {
+            holder.binding.tvSub.setTextColor(Color.BLACK)
+        } else {
+            holder.binding.tvSub.setTextColor(
+                ContextCompat.getColor(context, R.color.text_sort_unselected)
+            )
+        }
 
         holder.itemView.setOnClickListener {
+            val previousPosition = selectedPosition
+            selectedPosition = position
+            if (previousPosition != -1) notifyItemChanged(previousPosition)
+            notifyItemChanged(selectedPosition)
+
             onItemClick?.invoke(item)
         }
     }
 
     override fun getItemCount() = list.size
 
-    class ViewHolder(val binding: ItemToolsBinding) : RecyclerView.ViewHolder(binding.root)
+    class ViewHolder(val binding: ItemSubBinding) : RecyclerView.ViewHolder(binding.root)
 }

@@ -10,6 +10,7 @@ import com.example.editphoto.databinding.FragmentCutBinding
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.handleBackPressedCommon
 import com.example.editphoto.utils.handlePhysicalBackPress
+import androidx.core.graphics.toColorInt
 
 class CutFragment : Fragment() {
     private lateinit var binding: FragmentCutBinding
@@ -17,6 +18,7 @@ class CutFragment : Fragment() {
     private var parentActivity: EditImageActivity? = null
     private var beforeCropBitmap: Bitmap? = null
     private var hasApplied = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -53,32 +55,7 @@ class CutFragment : Fragment() {
     }
 
     private fun initListener() {
-
-
-        binding.radio11.setOnClickListener {
-            cropView?.setAspectRatio(1, 1)
-            cropView?.setFixedAspectRatio(true)
-        }
-        binding.radio34.setOnClickListener {
-            cropView?.setAspectRatio(3, 4)
-            cropView?.setFixedAspectRatio(true)
-        }
-        binding.radio43.setOnClickListener {
-            cropView?.setAspectRatio(4, 3)
-            cropView?.setFixedAspectRatio(true)
-        }
-        binding.radio916.setOnClickListener {
-            cropView?.setAspectRatio(9, 16)
-            cropView?.setFixedAspectRatio(true)
-        }
-        binding.radio169.setOnClickListener {
-            cropView?.setAspectRatio(16, 9)
-            cropView?.setFixedAspectRatio(true)
-        }
-        binding.radio75.setOnClickListener {
-            cropView?.setAspectRatio(7, 5)
-            cropView?.setFixedAspectRatio(true)
-        }
+        selectedRadio()
 
         // Apply crop
         binding.btnApply.setOnClickListener {
@@ -123,6 +100,43 @@ class CutFragment : Fragment() {
                     cropView?.setImageBitmap(it)
                 }
             }
+        }
+    }
+
+    private fun selectedRadio() {
+        val radioItems = listOf(
+            Triple(binding.ivIconRadio11, binding.tvNameRadio11) { cropView?.setAspectRatio(1, 1) },
+            Triple(binding.ivIconRadio34, binding.tvNameRadio34) { cropView?.setAspectRatio(3, 4) },
+            Triple(binding.ivIconRadio43, binding.tvNameRadio43) { cropView?.setAspectRatio(4, 3) },
+            Triple(binding.ivIconRadio916, binding.tvNameRadio916) { cropView?.setAspectRatio(9, 16) },
+            Triple(binding.ivIconRadio169, binding.tvNameRadio169) { cropView?.setAspectRatio(16, 9) },
+            Triple(binding.ivIconRadio75, binding.tvNameRadio75) { cropView?.setAspectRatio(7, 5) },
+        )
+
+        val (defaultIcon, defaultText, defaultAction) = radioItems.first()
+        defaultIcon.imageTintList =
+            android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+        defaultText.setTextColor(android.graphics.Color.BLACK)
+        defaultAction()
+        cropView?.setFixedAspectRatio(true)
+
+        radioItems.forEach { (icon, text, action) ->
+            val clickListener = View.OnClickListener {
+                radioItems.forEach { (iv, tv, _) ->
+                    iv.imageTintList =
+                        android.content.res.ColorStateList.valueOf("#FFBBB4CE".toColorInt())
+                    tv.setTextColor("#FFBBB4CE".toColorInt())
+                }
+                icon.imageTintList =
+                    android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+                text.setTextColor(android.graphics.Color.BLACK)
+
+                action()
+                cropView?.setFixedAspectRatio(true)
+            }
+
+            icon.setOnClickListener(clickListener)
+            text.setOnClickListener(clickListener)
         }
     }
 

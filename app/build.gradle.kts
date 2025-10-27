@@ -73,6 +73,8 @@ dependencies {
     //croper
     implementation("com.vanniktech:android-image-cropper:4.6.0")
 
+    //flexbox
+    implementation ("com.google.android.flexbox:flexbox:3.0.0")
 
 }
 

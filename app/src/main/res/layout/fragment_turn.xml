@@ -3,30 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#1A1A1A"
-    android:paddingVertical="@dimen/_16sdp"
     tools:context=".ui.fragments.TurnFragment">
 
-
-    <TextView
-        android:id="@+id/tvTurnTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Xoay"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_marginTop="@dimen/_12sdp"
         android:id="@+id/constraint_Tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvTurnTitle">
+        app:layout_constraintTop_toTopOf="parent">
 
 
 
@@ -44,8 +31,8 @@
                 android:id="@+id/ivIconTurn90"
                 android:layout_width="@dimen/_18sdp"
                 android:layout_height="@dimen/_18sdp"
-                android:src="@drawable/ic_filter"
-                app:tint="@color/white" />
+                android:src="@drawable/ic_radio_11"
+                app:tint="@color/black" />
 
             <TextView
                 android:id="@+id/tvNameTurn90"
@@ -53,22 +40,20 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_5sdp"
                 android:text="Xoay 90"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:textSize="8sp" />
 
         </LinearLayout>
 
-        <SeekBar
-            android:id="@+id/ruler"
-            android:layout_marginStart="@dimen/_12sdp"
+        <com.example.editphoto.view.RotationRulerView
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/turn90"
             app:layout_constraintStart_toEndOf="@+id/turn90"
-            app:layout_constraintBottom_toBottomOf="@+id/turn90"
+            android:id="@+id/rotationRuler"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:max="900"
-            android:progress="450"/>
+            android:layout_height="60dp" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

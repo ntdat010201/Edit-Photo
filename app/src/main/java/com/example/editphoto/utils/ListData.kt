@@ -17,15 +17,15 @@ val listAdjust = listOf(
 )
 
 val listFaceSub = listOf(
-    SubModel(R.drawable.ic_filter, "Môi", SubType.LIPS),
-    SubModel(R.drawable.ic_filter, "Mắt", SubType.EYES),
-    SubModel(R.drawable.ic_filter, "Má", SubType.CHEEKS),
-    SubModel(R.drawable.ic_filter, "Tẩy", SubType.WHITE),
-    SubModel(R.drawable.ic_filter, "Mờ", SubType.BLUR),
+    SubModel("Môi", SubType.LIPS),
+    SubModel("Mắt", SubType.EYES),
+    SubModel("Má", SubType.CHEEKS),
+    SubModel("Tẩy", SubType.WHITE),
+    SubModel("Mờ", SubType.BLUR),
 )
 
 val listAdjustSub = listOf(
-    SubModel(R.drawable.ic_filter, "Tỷ Lệ", SubType.CUT),
-    SubModel(R.drawable.ic_filter, "Lật", SubType.FLIP),
-    SubModel(R.drawable.ic_filter, "Xoay", SubType.TURN),
+    SubModel("Tỷ Lệ", SubType.CUT),
+    SubModel("Lật", SubType.FLIP),
+    SubModel("Xoay", SubType.TURN),
 )

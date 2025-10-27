@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.SeekBar
 import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentTurnBinding
@@ -30,15 +29,22 @@ class TurnFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentTurnBinding.inflate(inflater, container, false)
-        initSeekBar()
+        initView()
         initListener()
-        /*handlePhysicalBackPress()*/
         return binding.root
     }
 
-    private fun initSeekBar() {
-        binding.ruler.max = 900
-        binding.ruler.progress = 450
+    private fun initView() {
+        binding.rotationRuler.onDegreeChange = { degree ->
+            val act = requireActivity() as EditImageActivity
+            val vm = act.viewModel
+            val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
+            bitmap?.let {
+                val rotated = rotateBitmap(it, degree)
+                vm.setPreview(rotated)
+                act.binding.imgPreview.setImageBitmap(rotated)
+            }
+        }
     }
 
     private fun initListener() {
@@ -59,24 +65,6 @@ class TurnFragment : Fragment() {
             }
         }
 
-        binding.ruler.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    currentRotation = (progress - 450) / 10f
-                    val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
-                    bitmap?.let {
-                        val rotated = rotateBitmap(it, totalRotation + currentRotation)
-                        vm.setPreview(rotated)
-                        act.binding.imgPreview.setImageBitmap(rotated)
-                        hasPreview = true
-                        hasApplied = false
-                    }
-                }
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
 
         binding.btnApply.setOnClickListener {
             vm.commitPreview()
@@ -85,7 +73,6 @@ class TurnFragment : Fragment() {
             hasApplied = true
             totalRotation += currentRotation
             currentRotation = 0f
-            binding.ruler.progress = 450
             parentFragmentManager.popBackStack()
         }
 
@@ -98,7 +85,6 @@ class TurnFragment : Fragment() {
                 hasPreview = false
                 totalRotation = 0f
                 currentRotation = 0f
-                binding.ruler.progress = 450
             }
         }
 
@@ -128,7 +114,6 @@ class TurnFragment : Fragment() {
             vm.setPreview(null)
             totalRotation = 0f
             currentRotation = 0f
-            binding.ruler.progress = 450
         }
         parentFragmentManager.popBackStack()
     }
@@ -144,4 +129,6 @@ class TurnFragment : Fragment() {
         }
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
+
+
 }

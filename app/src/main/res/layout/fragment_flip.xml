@@ -4,90 +4,113 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:paddingVertical="@dimen/_16sdp"
-    android:background="#1A1A1A"
+    android:background="@color/white"
     tools:context=".ui.fragments.FlipFragment">
 
-    <TextView
-        android:id="@+id/tvFlipTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lật"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_marginTop="@dimen/_12sdp"
+        android:paddingHorizontal="@dimen/_12sdp"
         android:id="@+id/constraint_Tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvFlipTitle">
+        app:layout_constraintTop_toTopOf="parent">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_marginEnd="@dimen/_9sdp"
+            android:id="@+id/constraint_horizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_square_gray"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/constraint_vertical"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-
-            <LinearLayout
-                android:id="@+id/flipHorizontal"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                app:layout_constraintEnd_toStartOf="@id/flipVertical"
-                android:orientation="vertical"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
-                    android:id="@+id/ivIconFlipHorizontal"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                    android:id="@+id/img_horizontal"
+                    android:layout_width="@dimen/_24sdp"
+                    android:layout_height="@dimen/_24sdp"
+                    android:layout_marginVertical="@dimen/_12sdp"
+                    android:src="@drawable/ic_flip_horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_horizontal"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/tvNameFlipHorizontal"
+                    android:layout_marginStart="@dimen/_4sdp"
+                    android:id="@+id/tv_horizontal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Lật ngang"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
+                    android:text="Horizontal"
+                    android:textColor="#63626E"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/img_horizontal"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-            </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <LinearLayout
-                android:id="@+id/flipVertical"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_marginStart="@dimen/_9sdp"
+            android:id="@+id/constraint_vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_square_gray"
+            app:layout_constraintTop_toTopOf="@+id/constraint_horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/constraint_horizontal"
+            app:layout_constraintBottom_toBottomOf="@+id/constraint_horizontal">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="@id/flipHorizontal"
-                app:layout_constraintStart_toEndOf="@id/flipHorizontal"
-                app:layout_constraintTop_toTopOf="@id/flipHorizontal">
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
-                    android:id="@+id/ivIconFlipVertical"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                    android:id="@+id/img_vertical"
+                    android:layout_width="@dimen/_24sdp"
+                    android:layout_height="@dimen/_24sdp"
+                    android:layout_marginVertical="@dimen/_12sdp"
+                    android:src="@drawable/ic_flip_vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_vertical"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/tvNameFlipVertical"
+                    android:layout_marginStart="@dimen/_4sdp"
+                    android:id="@+id/tv_vertical"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Lật dọc"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
+                    android:text="Vertical"
+                    android:textColor="#63626E"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/img_vertical"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-            </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
