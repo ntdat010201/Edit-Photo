@@ -4,65 +4,97 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="@dimen/_16sdp"
-    android:background="#1A1A1A"
+    android:background="@color/white"
     tools:context=".ui.fragments.EyesFragment">
-
-    <TextView
-        android:id="@+id/tvEyesTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Chỉnh sửa mắt"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <SeekBar
-        android:id="@+id/eyesIntensity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:max="100"
-        app:layout_constraintTop_toBottomOf="@id/tvEyesTitle" />
 
     <HorizontalScrollView
         android:id="@+id/hScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_12sdp"
+        android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eyesIntensity">
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/constraint_Tools"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-           >
+            android:layout_height="wrap_content">
 
             <LinearLayout
-                android:id="@+id/eyeSize"
+                android:id="@+id/eyeLess"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeSize"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeLess"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_color_less" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeLess"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+
+                <TextView
+                    android:id="@+id/tvNameEyeLess"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:text="Eye Less"
+                    android:textColor="@color/white"
+                    android:textSize="8sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/eyeSize"
+                android:layout_width="@dimen/_55sdp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/eyeLess"
+                app:layout_constraintStart_toEndOf="@id/eyeLess"
+                app:layout_constraintTop_toTopOf="@id/eyeLess">
+
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_size" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvNameEyeSize"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Size"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
@@ -72,25 +104,37 @@
             <LinearLayout
                 android:id="@+id/eyeHeight"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="@id/eyeSize"
                 app:layout_constraintStart_toEndOf="@id/eyeSize"
                 app:layout_constraintTop_toTopOf="@id/eyeSize">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeHeight"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeHeight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_height" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeHeight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
+
 
                 <TextView
                     android:id="@+id/tvNameEyeHeight"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Elevation"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
@@ -100,25 +144,36 @@
             <LinearLayout
                 android:id="@+id/eyeWidth"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="@id/eyeHeight"
                 app:layout_constraintStart_toEndOf="@id/eyeHeight"
                 app:layout_constraintTop_toTopOf="@id/eyeHeight">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeWidth"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeWidth"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_width" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeWidth"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvNameEyeWidth"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Width"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
@@ -128,25 +183,36 @@
             <LinearLayout
                 android:id="@+id/eyeLocation"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="@id/eyeWidth"
                 app:layout_constraintStart_toEndOf="@id/eyeWidth"
                 app:layout_constraintTop_toTopOf="@id/eyeWidth">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeLocation"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_location" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvNameEyeLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Location"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
@@ -156,53 +222,78 @@
             <LinearLayout
                 android:id="@+id/eyeDistance"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="@id/eyeLocation"
                 app:layout_constraintStart_toEndOf="@id/eyeLocation"
                 app:layout_constraintTop_toTopOf="@id/eyeLocation">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeDistance"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_distance" />
+
+                    <ImageView
+                        android:id="@+id/borderEyeDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
+
 
                 <TextView
                     android:id="@+id/tvNameEyeDistance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Distance"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
+
 
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/eyeCorner"
                 android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="@id/eyeDistance"
                 app:layout_constraintStart_toEndOf="@id/eyeDistance"
                 app:layout_constraintTop_toTopOf="@id/eyeDistance">
 
-                <ImageView
-                    android:id="@+id/ivIconEyeCorner"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivIconEyeCorner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_eye_corner" />
+
+
+                    <ImageView
+                        android:id="@+id/borderEyeCorner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_selected_color"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvNameEyeCorner"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_4sdp"
                     android:text="Corner"
                     android:textColor="@color/white"
                     android:textSize="8sp" />
@@ -214,10 +305,10 @@
 
 
     <Button
-        android:layout_marginTop="@dimen/_8sdp"
         android:id="@+id/btnApply"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
         android:text="Áp dụng"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/hScroll" />

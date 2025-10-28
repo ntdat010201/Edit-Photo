@@ -17,25 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:padding="@dimen/_2sdp"
-            android:id="@+id/img_back"
-            android:layout_width="@dimen/_28sdp"
-            android:layout_height="@dimen/_28sdp"
-            android:src="@drawable/ic_back"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageView
-            android:padding="@dimen/_2sdp"
-            android:id="@+id/img_apply"
-            android:layout_width="@dimen/_28sdp"
-            android:layout_height="@dimen/_28sdp"
-            android:src="@drawable/ic_apply"
-            app:layout_constraintBottom_toBottomOf="@+id/img_back"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/img_back" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -44,10 +25,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/constraint_edit"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraint_tool"
-        app:layout_constraintDimensionRatio="1:1">
+        app:layout_constraintTop_toBottomOf="@+id/constraint_tool">
 
         <ImageView
             android:id="@+id/imgPreview"
@@ -68,37 +49,63 @@
 
     </FrameLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_marginTop="@dimen/_10sdp"
-        android:layout_marginBottom="@dimen/_7sdp"
-        app:layout_constraintTop_toBottomOf="@+id/framePreviewContainer"
-        android:layout_marginEnd="@dimen/_12sdp"
-        app:layout_constraintEnd_toEndOf="parent"
+    <!--<androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/back_next"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginEnd="@dimen/_12sdp"
+        android:layout_marginBottom="@dimen/_7sdp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/framePreviewContainer">
 
         <ImageView
-            android:layout_marginEnd="@dimen/_8sdp"
-            app:layout_constraintEnd_toStartOf="@+id/come_next"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             android:id="@+id/come_back"
-            android:src="@drawable/ic_come_back"
             android:layout_width="@dimen/_18sdp"
-            android:layout_height="@dimen/_18sdp"/>
+            android:layout_height="@dimen/_18sdp"
+            android:layout_marginEnd="@dimen/_8sdp"
+            android:src="@drawable/ic_come_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/come_next"
+            app:layout_constraintTop_toTopOf="parent" />
 
 
         <ImageView
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             android:id="@+id/come_next"
-            android:src="@drawable/ic_come_next"
             android:layout_width="@dimen/_18sdp"
-            android:layout_height="@dimen/_18sdp"/>
+            android:layout_height="@dimen/_18sdp"
+            android:src="@drawable/ic_come_next"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
+    </androidx.constraintlayout.widget.ConstraintLayout>-->
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:visibility="gone"
+        android:id="@+id/seekbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginHorizontal="@dimen/_14sdp"
+        android:layout_marginBottom="@dimen/_7sdp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/framePreviewContainer">
+
+        <SeekBar
+            android:id="@+id/seekBarIntensity"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:max="100"
+            android:progressDrawable="@drawable/custom_progress_bar"
+            android:thumb="@drawable/img_thumb_seekbar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraint_edit"
@@ -110,6 +117,7 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:paddingHorizontal="@dimen/_12sdp"
             android:id="@+id/constraint_sub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -119,28 +127,30 @@
 
 
             <androidx.recyclerview.widget.RecyclerView
-              android:layout_marginVertical="@dimen/_12sdp"
                 android:id="@+id/rvSubOptions"
                 android:layout_width="0dp"
                 android:layout_height="@dimen/_16sdp"
+                android:layout_marginVertical="@dimen/_12sdp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <FrameLayout
-            android:layout_marginBottom="@dimen/_12sdp"
+
             android:id="@+id/editContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/constraint_sub"
+            android:layout_marginBottom="@dimen/_12sdp"
             app:layout_constraintBottom_toTopOf="@+id/constraint_feature"
-           app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/constraint_sub" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:paddingHorizontal="@dimen/_12sdp"
             android:id="@+id/constraint_feature"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_54sdp"
@@ -149,20 +159,18 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
-                app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginVertical="@dimen/_12sdp"
                 android:id="@+id/rvMainFeatures"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/_12sdp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

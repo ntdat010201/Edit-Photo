@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
@@ -28,6 +29,7 @@ import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.ui.fragments.WhiteFragment
+import com.example.editphoto.utils.SeekBarController
 import com.example.editphoto.utils.listAdjust
 import com.example.editphoto.utils.listAdjustSub
 import com.example.editphoto.utils.listFaceSub
@@ -47,6 +49,7 @@ class EditImageActivity : BaseActivity() {
     private lateinit var featuresAdapter: MainFeaturesAdapter
     private var originalBitmap: Bitmap? = null
     private var faceLandmarker: FaceLandmarker? = null
+    private var currentSeekBarController: SeekBarController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,12 +119,6 @@ class EditImageActivity : BaseActivity() {
             }
         }
 
-        binding.imgApply.setOnClickListener {
-            saveEditedImageToGallery()
-        }
-        binding.imgBack.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
     }
 
     private fun setupFaceLandmarker() {
@@ -150,7 +147,11 @@ class EditImageActivity : BaseActivity() {
                     justifyContent = JustifyContent.SPACE_BETWEEN
                 }
             } else {
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false).also {
+                LinearLayoutManager(
+                    this@EditImageActivity,
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+                ).also {
                     LinearSnapHelper().attachToRecyclerView(this@apply)
                 }
             }
@@ -175,7 +176,6 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun showSubOptionsFace(list: List<SubModel>) {
-
         val subAdapter = SubOptionsAdapter(list)
 
         binding.rvSubOptions.apply {
@@ -264,4 +264,29 @@ class EditImageActivity : BaseActivity() {
         faceLandmarker?.close()
     }
 
+    fun attachSeekBar(controller: SeekBarController) {
+        currentSeekBarController = controller
+        binding.seekbar.visibility = View.VISIBLE
+
+        val defaultProgress = (controller.getDefaultIntensity() * 100).toInt().coerceIn(0, 100)
+        binding.seekBarIntensity.progress = defaultProgress
+
+        binding.seekBarIntensity.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    controller.onIntensityChanged(progress / 100f)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    fun detachSeekBar() {
+        currentSeekBarController = null
+        binding.seekbar.visibility = View.GONE
+        binding.seekBarIntensity.setOnSeekBarChangeListener(null)
+    }
 }

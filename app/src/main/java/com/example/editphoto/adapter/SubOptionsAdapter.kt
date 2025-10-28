@@ -15,7 +15,7 @@ class SubOptionsAdapter(
 ) : RecyclerView.Adapter<SubOptionsAdapter.ViewHolder>() {
     var onItemClick: ((SubModel) -> Unit)? = null
 
-     var selectedPosition = -1
+     var selectedPosition = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemSubBinding.inflate(

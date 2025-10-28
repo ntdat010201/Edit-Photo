@@ -5,12 +5,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.SeekBar
+import android.widget.ImageView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentLipsBinding
 import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.SeekBarController
 import com.example.editphoto.utils.handleBackPressedCommon
 import com.example.editphoto.utils.handlePhysicalBackPress
 import com.example.editphoto.utils.toBitmap
@@ -32,25 +32,30 @@ import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
-class LipsFragment : Fragment() {
+class LipsFragment : Fragment(), SeekBarController {
 
     private lateinit var binding: FragmentLipsBinding
     private lateinit var viewModel: EditImageViewModel
+    private lateinit var act: EditImageActivity
 
     private var beforeEditBitmap: Bitmap? = null
     private var hasApplied = false
 
-    // Màu môi hiện tại (Scalar BGR)
-    private var selectedColor: Scalar = Scalar(233.0, 30.0, 99.0)
+    private var selectedColor: Scalar = Scalar(0.0, 0.0, 0.0)
     private var intensity: Float = 0.1f
 
-    // Dữ liệu môi
     private var cachedLandmarks: List<NormalizedLandmark>? = null
     private var lipMask: Mat? = null
     private var lipRegion: Mat? = null
     private var baseMat: Mat? = null
 
     private var applyJob: Job? = null
+
+    private var selectedColorView: ImageView? = null
+    private var selectedBorderView: ImageView? = null
+
+    // Màu "không tô"
+    private val COLORLESS = Scalar(0.0, 0.0, 0.0)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -61,7 +66,8 @@ class LipsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val act = requireActivity() as EditImageActivity
+
+        act = requireActivity() as EditImageActivity
         viewModel = act.viewModel
 
         initData()
@@ -74,68 +80,113 @@ class LipsFragment : Fragment() {
     }
 
     private fun initView() {
-
+        // Mặc định chọn colorless + ẩn SeekBar
+        selectColor(binding.colorless, binding.borderColorless, COLORLESS)
     }
 
     private fun initListener() {
-        binding.colorRed.setOnClickListener {
-            selectedColor = Scalar(244.0, 67.0, 54.0); scheduleRealtimePreview()
+        // === CÁC MÀU ===
+        binding.colorless.setOnClickListener {
+            selectColor(binding.colorless, binding.borderColorless, COLORLESS)
         }
-        binding.colorGreen.setOnClickListener {
-            selectedColor = Scalar(233.0, 30.0, 99.0); scheduleRealtimePreview()
+        binding.pinkLotus.setOnClickListener {
+            selectColor(binding.pinkLotus, binding.borderPinkLotus, Scalar(239.0, 159.0, 196.0))
         }
-        binding.colorPurple.setOnClickListener {
-            selectedColor = Scalar(156.0, 39.0, 176.0); scheduleRealtimePreview()
+        binding.lightPink.setOnClickListener {
+            selectColor(binding.lightPink, binding.borderLightPink, Scalar(241.0, 106.0, 165.0))
         }
-        binding.colorYellow.setOnClickListener {
-            selectedColor = Scalar(103.0, 58.0, 183.0); scheduleRealtimePreview()
+        binding.darkPink.setOnClickListener {
+            selectColor(binding.darkPink, binding.borderDarkPink, Scalar(242.0, 50.0, 135.0))
+        }
+        binding.darkRed.setOnClickListener {
+            selectColor(binding.darkRed, binding.borderDarkRed, Scalar(207.0, 2.0, 95.0))
+        }
+        binding.orange.setOnClickListener {
+            selectColor(binding.orange, binding.borderOrange, Scalar(246.0, 74.0, 74.0))
+        }
+        binding.orangeRed.setOnClickListener {
+            selectColor(binding.orangeRed, binding.borderOrangeRed, Scalar(228.0, 2.0, 3.0))
+        }
+        binding.brightRed.setOnClickListener {
+            selectColor(binding.brightRed, binding.borderBrightRed, Scalar(191.0, 5.0, 6.0))
+        }
+        binding.earthyBrown.setOnClickListener {
+            selectColor(binding.earthyBrown, binding.borderEarthyBrown, Scalar(122.0, 6.0, 6.0))
         }
 
-
+        // === NÚT ===
         binding.btnApply.setOnClickListener {
             viewModel.commitPreview()
             hasApplied = true
             beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+            act.detachSeekBar()
             parentFragmentManager.popBackStack()
         }
 
-
-        // Reset
         binding.btnReset.setOnClickListener {
             if (!hasApplied) {
-                beforeEditBitmap?.let {
-                    viewModel.setPreview(null)
-                    viewModel.updateBitmap(it)
-                }
-                cachedLandmarks = null
-                lipMask = null
-                lipRegion = null
-                baseMat = null
+                resetLipToOriginal()
+                selectColor(binding.colorless, binding.borderColorless, COLORLESS)
             }
         }
-        // Back
+
         binding.btnBack.setOnClickListener {
-            val act = requireActivity() as EditImageActivity
             handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
+            act.detachSeekBar()
         }
 
-        handlePhysicalBackPress { act ->
-            handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
+        handlePhysicalBackPress { activity ->
+            handleBackPressedCommon(activity, hasApplied, beforeEditBitmap)
+            act.detachSeekBar()
         }
-
-        // SeekBar realtime
-        binding.lipsIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                intensity = progress / 100f
-                scheduleRealtimePreview()
-            }
-
-            override fun onStartTrackingTouch(sb: SeekBar) {}
-            override fun onStopTrackingTouch(sb: SeekBar) {}
-        })
-
     }
 
+    // === CHỌN MÀU + QUẢN LÝ SEEKBAR ===
+    private fun selectColor(colorView: ImageView, borderView: ImageView, color: Scalar) {
+        selectedBorderView?.visibility = View.GONE
+
+        borderView.visibility = View.VISIBLE
+        selectedColorView = colorView
+        selectedBorderView = borderView
+
+        if (color == COLORLESS) {
+            // colorless → reset môi + ẨN SeekBar
+            resetLipToOriginal()
+            act.detachSeekBar()
+        } else {
+            // Màu khác → hiện SeekBar + set intensity
+            selectedColor = color
+            intensity = 0.0f
+            act.attachSeekBar(this)
+            act.binding.seekBarIntensity.progress = 0
+            scheduleRealtimePreview()
+        }
+    }
+
+    // === RESET MÔI VỀ GỐC ===
+    private fun resetLipToOriginal() {
+        beforeEditBitmap?.let {
+            viewModel.setPreview(null)
+            viewModel.updateBitmap(it)
+        }
+        cachedLandmarks = null
+        lipMask = null
+        lipRegion = null
+        baseMat = null
+        intensity = 0f
+    }
+
+    // === SEEKBAR CALLBACK ===
+    override fun onIntensityChanged(intensity: Float) {
+        if (selectedColor == COLORLESS) {
+            act.detachSeekBar()
+            return
+        }
+        this.intensity = intensity
+        scheduleRealtimePreview()
+    }
+
+    override fun getDefaultIntensity(): Float = 0.1f
 
     private fun scheduleRealtimePreview() {
         applyJob?.cancel()
@@ -145,7 +196,6 @@ class LipsFragment : Fragment() {
         }
     }
 
-    /** Chuẩn bị mask môi */
     private suspend fun prepareBaseIfNeeded() {
         if (lipMask != null && lipRegion != null && baseMat != null) return
         val bitmap = viewModel.editedBitmap.value ?: return
@@ -164,46 +214,37 @@ class LipsFragment : Fragment() {
         }
     }
 
-    /** Realtime preview (cập nhật vào previewBitmap) */
     private fun updateLipPreview() {
         lifecycleScope.launch(Dispatchers.Default) {
             prepareBaseIfNeeded()
             if (lipMask == null || lipRegion == null || baseMat == null) return@launch
 
-            val blended = lipRegion!!.quickApplyLipColor(selectedColor, intensity)
             val preview = baseMat!!.clone()
+            val blended = lipRegion!!.quickApplyLipColor(selectedColor, intensity)
             blended.copyTo(preview, lipMask)
 
             val bitmapOut = preview.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.setPreview(bitmapOut)  // Sử dụng previewBitmap thay vì update trực tiếp editedBitmap
+                viewModel.setPreview(bitmapOut)
             }
         }
     }
 
-    /** Khi nhấn Áp dụng (commit preview vào editedBitmap) */
-    private fun applyFinalLipColor() {
-        viewModel.commitPreview()  //
-        parentFragmentManager.popBackStack()  // Quay lại sau khi apply (tùy chọn)
-    }
-
-
-    //xử lý môi
+    // === XỬ LÝ MÔI ===
     private fun createLipMaskAndRegion(
-        bitmap: android.graphics.Bitmap,
-        landmarks: List<NormalizedLandmark>
+        bitmap: Bitmap, landmarks: List<NormalizedLandmark>
     ): Triple<Mat, Mat, Mat> {
         val inputMat = bitmap.toMat()
         val width = bitmap.width.toDouble()
         val height = bitmap.height.toDouble()
 
         val outerLipIndices = listOf(
-            61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291,
-            409, 270, 269, 267, 0, 37, 39, 40, 185
+            61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409,
+            270, 269, 267, 0, 37, 39, 40, 185
         )
         val innerLipIndices = listOf(
-            78, 95, 88, 178, 87, 14, 317, 402, 318, 324,
-            308, 415, 310, 311, 312, 13, 82
+            78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415,
+            310, 311, 312, 13, 82
         )
 
         val outerPoints =
@@ -229,16 +270,8 @@ class LipsFragment : Fragment() {
         return blended
     }
 
-    private fun android.graphics.Bitmap.applyLipColorFromLandmarks(
-        landmarks: List<NormalizedLandmark>,
-        color: Scalar,
-        intensity: Float
-    ): android.graphics.Bitmap {
-        val (mask, region, base) = createLipMaskAndRegion(this, landmarks)
-        val overlay = Mat(region.size(), region.type(), color)
-        val blended = Mat()
-        Core.addWeighted(region, 1.0 - intensity, overlay, intensity.toDouble(), 0.0, blended)
-        blended.copyTo(base, mask)
-        return base.toBitmap()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        act.detachSeekBar()
     }
 }

@@ -91,7 +91,7 @@
             android:id="@+id/constraintFull"
             android:layout_width="@dimen/_30sdp"
             android:layout_height="@dimen/_30sdp"
-            android:background="@drawable/circle_bgr_gray"
+            android:background="@drawable/circle_bgr_white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -135,7 +135,7 @@
             android:layout_width="@dimen/_30sdp"
             android:layout_height="@dimen/_30sdp"
             android:layout_marginTop="@dimen/_7sdp"
-            android:background="@drawable/circle_bgr_gray"
+            android:background="@drawable/circle_bgr_white"
             app:layout_constraintEnd_toEndOf="@+id/constraint169"
             app:layout_constraintStart_toStartOf="@+id/constraint169"
             app:layout_constraintTop_toBottomOf="@+id/constraint169">
@@ -157,7 +157,7 @@
             android:layout_width="@dimen/_30sdp"
             android:layout_height="@dimen/_30sdp"
             android:layout_marginTop="@dimen/_7sdp"
-            android:background="@drawable/circle_bgr_gray"
+            android:background="@drawable/circle_bgr_white"
             app:layout_constraintEnd_toEndOf="@+id/constraint43"
             app:layout_constraintStart_toStartOf="@+id/constraint43"
             app:layout_constraintTop_toBottomOf="@+id/constraint43">

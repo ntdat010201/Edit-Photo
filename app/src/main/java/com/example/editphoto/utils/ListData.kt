@@ -7,13 +7,10 @@ import com.example.editphoto.model.AdjustModel
 import com.example.editphoto.model.SubModel
 
 val listAdjust = listOf(
-    /*AdjustModel(R.drawable.ic_crop, "Cắt", FeatureType.CROP),
-    AdjustModel(R.drawable.ic_cut, "Tẩy", FeatureType.CUT),*/
-    AdjustModel(R.drawable.ic_ratio, "Điều chỉnh", FeatureType.ADJUST),
- /*   AdjustModel(R.drawable.ic_dessy, "Khuôn mặt", FeatureType.DESSY),*/
-    AdjustModel(R.drawable.ic_face, "Khuôn mặt", FeatureType.FACE),
+
+    AdjustModel(R.drawable.ic_layout, "Điều chỉnh", FeatureType.ADJUST),
+    AdjustModel(R.drawable.ic_make_up, "Khuôn mặt", FeatureType.FACE),
     AdjustModel(R.drawable.ic_sticker, "Sticker", FeatureType.STICKER),
-  /*  AdjustModel(R.drawable.ic_text, "Văn bản", FeatureType.TEXT),*/
 )
 
 val listFaceSub = listOf(
