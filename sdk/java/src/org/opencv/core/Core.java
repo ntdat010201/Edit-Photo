@@ -6065,47 +6065,47 @@ public class Core {
         max_1(src1.nativeObj, src2.val[0], src2.val[1], src2.val[2], src2.val[3], dst.nativeObj);
     }
 
-    // manual port
-    public static class MinMaxLocResult {
-        public double minVal;
-        public double maxVal;
-        public Point minLoc;
-        public Point maxLoc;
+// manual port
+public static class MinMaxLocResult {
+    public double minVal;
+    public double maxVal;
+    public Point minLoc;
+    public Point maxLoc;
 
 
-        public MinMaxLocResult() {
-            minVal=0; maxVal=0;
-            minLoc=new Point();
-            maxLoc=new Point();
-        }
+    public MinMaxLocResult() {
+        minVal=0; maxVal=0;
+        minLoc=new Point();
+        maxLoc=new Point();
     }
+}
 
 
 // C++: minMaxLoc(Mat src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
 
 
-    //javadoc: minMaxLoc(src, mask)
-    public static MinMaxLocResult minMaxLoc(Mat src, Mat mask) {
-        MinMaxLocResult res = new MinMaxLocResult();
-        long maskNativeObj=0;
-        if (mask != null) {
-            maskNativeObj=mask.nativeObj;
-        }
-        double resarr[] = n_minMaxLocManual(src.nativeObj, maskNativeObj);
-        res.minVal=resarr[0];
-        res.maxVal=resarr[1];
-        res.minLoc.x=resarr[2];
-        res.minLoc.y=resarr[3];
-        res.maxLoc.x=resarr[4];
-        res.maxLoc.y=resarr[5];
-        return res;
+//javadoc: minMaxLoc(src, mask)
+public static MinMaxLocResult minMaxLoc(Mat src, Mat mask) {
+    MinMaxLocResult res = new MinMaxLocResult();
+    long maskNativeObj=0;
+    if (mask != null) {
+        maskNativeObj=mask.nativeObj;
     }
+    double resarr[] = n_minMaxLocManual(src.nativeObj, maskNativeObj);
+    res.minVal=resarr[0];
+    res.maxVal=resarr[1];
+    res.minLoc.x=resarr[2];
+    res.minLoc.y=resarr[3];
+    res.maxLoc.x=resarr[4];
+    res.maxLoc.y=resarr[5];
+    return res;
+}
 
 
-    //javadoc: minMaxLoc(src)
-    public static MinMaxLocResult minMaxLoc(Mat src) {
-        return minMaxLoc(src, null);
-    }
+//javadoc: minMaxLoc(src)
+public static MinMaxLocResult minMaxLoc(Mat src) {
+    return minMaxLoc(src, null);
+}
 
 
     // C++:  float cv::cubeRoot(float val)
@@ -6590,6 +6590,6 @@ public class Core {
 
     // C++:  void cv::max(Mat src1, Scalar src2, Mat& dst)
     private static native void max_1(long src1_nativeObj, double src2_val0, double src2_val1, double src2_val2, double src2_val3, long dst_nativeObj);
-    private static native double[] n_minMaxLocManual(long src_nativeObj, long mask_nativeObj);
+private static native double[] n_minMaxLocManual(long src_nativeObj, long mask_nativeObj);
 
 }
