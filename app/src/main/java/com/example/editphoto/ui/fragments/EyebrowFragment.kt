@@ -6,18 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.example.editphoto.R
-import com.example.editphoto.databinding.FragmentBlurBinding
 
-
-class BlurFragment : Fragment() {
-    private lateinit var binding : FragmentBlurBinding
+class EyebrowFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentBlurBinding.inflate(layoutInflater)
-        return binding.root
+
+        return inflater.inflate(R.layout.fragment_eyebrow, container, false)
     }
 
 }

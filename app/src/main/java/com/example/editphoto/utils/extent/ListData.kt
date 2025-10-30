@@ -17,7 +17,7 @@ val listFaceSub = listOf(
     SubModel("Môi", SubType.LIPS),
     SubModel("Mắt", SubType.EYES),
     SubModel("Má", SubType.CHEEKS),
-    SubModel("Tẩy", SubType.WHITE),
+    SubModel("Lông mày", SubType.EYEBROW),
     SubModel("Mờ", SubType.BLUR),
 )
 

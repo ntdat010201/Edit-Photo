@@ -31,7 +31,7 @@ import com.example.editphoto.ui.fragments.EyesFragment
 import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
 import com.example.editphoto.ui.fragments.TurnFragment
-import com.example.editphoto.ui.fragments.WhiteFragment
+import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.utils.extent.listAdjust
 import com.example.editphoto.utils.extent.listAdjustSub
 import com.example.editphoto.utils.extent.listFaceSub
@@ -285,7 +285,7 @@ class EditImageActivity : BaseActivity() {
                     SubType.LIPS -> LipsFragment()
                     SubType.EYES -> EyesFragment()
                     SubType.CHEEKS -> CheeksFragment()
-                    SubType.WHITE -> WhiteFragment()
+                    SubType.EYEBROW -> EyebrowFragment()
                     SubType.BLUR -> BlurFragment()
                     else -> null
                 }
