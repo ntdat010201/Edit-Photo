@@ -68,7 +68,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                     list.add(
                         PhotoModel(
                             id = id.toString(),
-                            uri = uri,
+                            uri = uri.toString(),
                             name = cursor.getString(nameIdx) ?: "Unknown",
                             path = cursor.getString(pathIdx) ?: "",
                             dateAdded = cursor.getLong(dateIdx),

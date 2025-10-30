@@ -2,7 +2,6 @@ package com.example.editphoto.ui.fragments
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,12 +11,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentLipsBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.OnApplyListener
-import com.example.editphoto.utils.SeekBarController
-import com.example.editphoto.utils.handleBackPressedCommon
-import com.example.editphoto.utils.handlePhysicalBackPress
-import com.example.editphoto.utils.toBitmap
-import com.example.editphoto.utils.toMat
+import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.extent.handleBackPressedCommon
+import com.example.editphoto.utils.extent.handlePhysicalBackPress
+import com.example.editphoto.utils.extent.toBitmap
+import com.example.editphoto.utils.extent.toMat
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
@@ -120,10 +119,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
             selectColor(binding.earthyBrown, binding.borderEarthyBrown, Scalar(122.0, 6.0, 6.0))
         }
 
-        handlePhysicalBackPress { activity ->
-            handleBackPressedCommon(activity, hasApplied, beforeEditBitmap)
-            parentActivity.detachSeekBar()
-        }
+
     }
 
     private fun selectColor(colorView: ImageView, borderView: ImageView, color: Scalar) {

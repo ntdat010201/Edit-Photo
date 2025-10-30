@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("de.undercouch.download") version "5.6.0"
+    alias(libs.plugins.ksp)
+
 }
 
 android {
@@ -76,5 +78,9 @@ dependencies {
     //flexbox
     implementation ("com.google.android.flexbox:flexbox:3.0.0")
 
+    //RoomDatabase
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }
 

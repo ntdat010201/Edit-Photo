@@ -2,10 +2,11 @@ package com.example.editphoto.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.RecyclerView
 import com.example.editphoto.databinding.ItemGalleryBinding
 import com.example.editphoto.model.PhotoModel
-import com.example.editphoto.utils.showImageGlide
+import com.example.editphoto.utils.extent.showImageGlide
 
 class GalleryAdapter(
     private val images: MutableList<PhotoModel>,
@@ -20,7 +21,7 @@ class GalleryAdapter(
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
         val imgItem = images[position]
-        showImageGlide(holder.itemView.context, imgItem.uri, holder.binding.imgGallery)
+        showImageGlide(holder.itemView.context, imgItem.uri.toUri(), holder.binding.imgGallery)
 
         holder.itemView.setOnClickListener {
             onItemClick.invoke(imgItem)

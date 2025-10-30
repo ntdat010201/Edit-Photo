@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentFlipBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.OnApplyListener
+import com.example.editphoto.utils.inter.OnApplyListener
 
 class FlipFragment : Fragment(), OnApplyListener {
 

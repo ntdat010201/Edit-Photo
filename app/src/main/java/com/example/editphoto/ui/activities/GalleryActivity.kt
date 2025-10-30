@@ -76,7 +76,7 @@ class GalleryActivity : BaseActivity() {
         }
         adapter?.onItemClick = { item ->
             val intent = Intent(this, EditImageActivity::class.java)
-            intent.putExtra("image_uri", item.uri.toString())
+            intent.putExtra("image_uri", item.uri)
             startActivity(intent)
         }
 

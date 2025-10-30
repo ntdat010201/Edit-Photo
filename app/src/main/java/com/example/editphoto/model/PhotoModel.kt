@@ -1,10 +1,12 @@
 package com.example.editphoto.model
 
-import android.net.Uri
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
+@Entity(tableName = "photo_table")
 data class PhotoModel(
-    val id: String,
-    val uri: Uri,
+    @PrimaryKey val id: String,
+    val uri: String,
     val name: String,
     val path: String,
     val dateAdded: Long,

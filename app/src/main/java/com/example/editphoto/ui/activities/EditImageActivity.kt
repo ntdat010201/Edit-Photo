@@ -1,11 +1,15 @@
 package com.example.editphoto.ui.activities
 
+import android.content.ContentValues
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.SeekBar
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
@@ -18,6 +22,7 @@ import com.example.editphoto.base.BaseActivity
 import com.example.editphoto.databinding.ActivityEditImageBinding
 import com.example.editphoto.enums.FeatureType
 import com.example.editphoto.enums.SubType
+import com.example.editphoto.model.PhotoModel
 import com.example.editphoto.model.SubModel
 import com.example.editphoto.ui.fragments.BlurFragment
 import com.example.editphoto.ui.fragments.CheeksFragment
@@ -27,13 +32,13 @@ import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.ui.fragments.WhiteFragment
-import com.example.editphoto.utils.OnApplyListener
-import com.example.editphoto.utils.SeekBarController
-import com.example.editphoto.utils.listAdjust
-import com.example.editphoto.utils.listAdjustSub
-import com.example.editphoto.utils.listFaceSub
-import com.example.editphoto.utils.showImageGlide
+import com.example.editphoto.utils.extent.listAdjust
+import com.example.editphoto.utils.extent.listAdjustSub
+import com.example.editphoto.utils.extent.listFaceSub
+import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.viewmodel.EditImageViewModel
+import com.example.editphoto.viewmodel.PhotoViewModel
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
@@ -41,10 +46,13 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import org.opencv.android.OpenCVLoader
+import java.io.File
 
 class EditImageActivity : BaseActivity() {
     internal lateinit var binding: ActivityEditImageBinding
     internal val viewModel: EditImageViewModel by viewModels()
+    private val photoViewModel: PhotoViewModel by viewModels()
+
     private lateinit var featuresAdapter: MainFeaturesAdapter
     private var originalBitmap: Bitmap? = null
     private var faceLandmarker: FaceLandmarker? = null
@@ -96,9 +104,9 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun initView() {
-/*
-        showImageGlide(this, originalBitmap!!, binding.imgPreview)
-*/
+        /*
+                showImageGlide(this, originalBitmap!!, binding.imgPreview)
+        */
 
         currentFeatureType = FeatureType.ADJUST
         currentSubType = SubType.CUT
@@ -173,6 +181,20 @@ class EditImageActivity : BaseActivity() {
             val fragment = supportFragmentManager.findFragmentById(R.id.editContainer)
             if (fragment is OnApplyListener) {
                 fragment.onApply()
+            }
+        }
+
+        binding.imgBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+
+        binding.tvSave.setOnClickListener {
+            val bitmap = viewModel.editedBitmap.value
+            if (bitmap != null) {
+                val uri = saveEditedImageToGallery(bitmap)
+                uri?.let { saveImageInfoToRoom(it, bitmap) }
+            } else {
+                Toast.makeText(this, "Không có ảnh để lưu!", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -283,7 +305,7 @@ class EditImageActivity : BaseActivity() {
         binding.imgPreview.visibility = View.GONE
         binding.cropImageView.visibility = View.VISIBLE
 
-       var beforeCropBitmap = viewModel.previewBitmap.value
+        var beforeCropBitmap = viewModel.previewBitmap.value
             ?: viewModel.editedBitmap.value
 
         beforeCropBitmap.let {
@@ -334,6 +356,60 @@ class EditImageActivity : BaseActivity() {
         currentSeekBarController = null
         binding.seekbar.visibility = View.GONE
         binding.seekBarIntensity.setOnSeekBarChangeListener(null)
+    }
+
+    private fun saveEditedImageToGallery(bitmap: Bitmap): Uri? {
+        val fileName = "edited_image_${System.currentTimeMillis()}.jpg"
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/EditPhoto")
+            }
+        }
+
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        if (uri != null) {
+            contentResolver.openOutputStream(uri)?.use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+            Toast.makeText(this, "Ảnh đã lưu vào bộ sưu tập", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Lưu ảnh thất bại!", Toast.LENGTH_SHORT).show()
+        }
+        return uri
+    }
+
+    private fun saveImageInfoToRoom(uri: Uri, bitmap: Bitmap) {
+        val filePath = getFilePathFromUri(uri)
+        val file = if (filePath != null) File(filePath) else null
+
+        val photo = PhotoModel(
+            id = System.currentTimeMillis().toString(),
+            uri = uri.toString(),
+            name = file?.name ?: "edited_image.jpg",
+            path = file?.absolutePath ?: "",
+            dateAdded = System.currentTimeMillis(),
+            size = file?.length() ?: 0L,
+            width = bitmap.width,
+            height = bitmap.height
+        )
+
+        photoViewModel.insertPhoto(photo)
+        Toast.makeText(this, "Đã lưu thông tin ảnh vào Room", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun getFilePathFromUri(uri: Uri): String? {
+        var path: String? = null
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            if (cursor.moveToFirst()) {
+                path = cursor.getString(columnIndex)
+            }
+        }
+        return path
     }
 
 }

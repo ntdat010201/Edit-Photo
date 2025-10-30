@@ -7,161 +7,161 @@
     android:background="@color/white"
     tools:context=".ui.fragments.CheeksFragment">
 
-
     <HorizontalScrollView
-        android:id="@+id/hScroll"
+        android:id="@+id/colorContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/constraint_Tools"
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/_12sdp"
+            android:paddingVertical="@dimen/_12sdp"
+            app:layout_constraintTop_toTopOf="parent">
 
-
-            <LinearLayout
-                android:id="@+id/cheekSize"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
 
                 <ImageView
-                    android:id="@+id/ivIconCheekSize"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tvNameCheekSize"
+                    android:id="@+id/colorless"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Cheek Size"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/smallFace"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="@id/cheekSize"
-                app:layout_constraintStart_toEndOf="@id/cheekSize"
-                app:layout_constraintTop_toTopOf="@id/cheekSize">
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_color_less" />
 
                 <ImageView
-                    android:id="@+id/ivIconSmallFace"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tvNameSmallFace"
+                    android:id="@+id/border_colorless"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Small Face"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
 
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/faceWidth"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="@id/smallFace"
-                app:layout_constraintStart_toEndOf="@id/smallFace"
-                app:layout_constraintTop_toTopOf="@id/smallFace">
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
 
                 <ImageView
-                    android:id="@+id/ivIconFaceWidth"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tvNameFaceWidth"
+                    android:id="@+id/colorBlush1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Face Width"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/temple"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="@id/faceWidth"
-                app:layout_constraintStart_toEndOf="@id/faceWidth"
-                app:layout_constraintTop_toTopOf="@id/faceWidth">
+                    android:src="@drawable/ic_blush_pink1" />
 
                 <ImageView
-                    android:id="@+id/ivIconTemple"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tvNameTemple"
+                    android:id="@+id/borderColorBlush1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Temple"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
 
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/cheekBone"
-                android:layout_width="@dimen/_55sdp"
-                android:layout_height="@dimen/_50sdp"
-                android:gravity="center"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="@id/temple"
-                app:layout_constraintStart_toEndOf="@id/temple"
-                app:layout_constraintTop_toTopOf="@id/temple">
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
 
                 <ImageView
-                    android:id="@+id/ivIconCheekBone"
-                    android:layout_width="@dimen/_18sdp"
-                    android:layout_height="@dimen/_18sdp"
-                    android:src="@drawable/ic_filter"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tvNameCheekBone"
+                    android:id="@+id/colorBlush2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/_5sdp"
-                    android:text="Cheek Bone"
-                    android:textColor="@color/white"
-                    android:textSize="8sp" />
+                    android:src="@drawable/ic_blush_pink2" />
 
-            </LinearLayout>
+                <ImageView
+                    android:id="@+id/borderColorBlush2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
+
+                <ImageView
+                    android:id="@+id/colorBlush3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+
+                    android:src="@drawable/ic_blush_pink3" />
+
+                <ImageView
+                    android:id="@+id/borderColorBlush3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
+
+                <ImageView
+                    android:id="@+id/colorBlush4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_blush_pink4" />
+
+                <ImageView
+                    android:id="@+id/borderColorBlush4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
+
+                <ImageView
+                    android:id="@+id/colorBlush5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_blush_pink5" />
+
+                <ImageView
+                    android:id="@+id/borderColorBlush5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp">
+
+                <ImageView
+                    android:id="@+id/colorBlush6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_blush_pink6" />
+
+                <ImageView
+                    android:id="@+id/borderColorBlush6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_selected_color"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+        </LinearLayout>
+
     </HorizontalScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

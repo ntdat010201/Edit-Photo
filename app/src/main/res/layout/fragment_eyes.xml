@@ -8,9 +8,12 @@
     tools:context=".ui.fragments.EyesFragment">
 
     <HorizontalScrollView
+    android:paddingVertical="@dimen/_6sdp"
+        android:layout_marginTop="@dimen/_1sdp"
         android:id="@+id/hScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -56,7 +59,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Eye Less"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>
@@ -96,7 +99,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Size"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>
@@ -136,7 +139,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Elevation"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>
@@ -175,7 +178,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Width"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>
@@ -214,7 +217,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Location"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>
@@ -254,7 +257,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Distance"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
 
@@ -295,7 +298,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
                     android:text="Corner"
-                    android:textColor="@color/white"
+                    android:textColor="@color/iv_selected"
                     android:textSize="8sp" />
 
             </LinearLayout>

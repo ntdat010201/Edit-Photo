@@ -10,11 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentEyesBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.SeekBarController
-import com.example.editphoto.utils.handleBackPressedCommon
-import com.example.editphoto.utils.handlePhysicalBackPress
-import com.example.editphoto.utils.toBitmap
-import com.example.editphoto.utils.toMat
+import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.extent.toBitmap
+import com.example.editphoto.utils.extent.toMat
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import kotlinx.coroutines.Dispatchers

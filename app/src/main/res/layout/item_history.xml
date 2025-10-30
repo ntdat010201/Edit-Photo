@@ -21,6 +21,17 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <ImageView
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:id="@+id/imgHistory"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:scaleType="centerCrop" />
+
             <androidx.appcompat.widget.AppCompatImageView
                 android:layout_margin="@dimen/_13sdp"
                 app:layout_constraintTop_toTopOf="parent"
@@ -32,16 +43,6 @@
                 android:layout_width="@dimen/_24sdp"
                 android:layout_height="@dimen/_24sdp"/>
 
-            <ImageView
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:id="@+id/imgGallery"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:adjustViewBounds="true"
-                android:scaleType="centerCrop" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

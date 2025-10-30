@@ -12,7 +12,7 @@ import com.canhub.cropper.CropImageView
 import com.example.editphoto.R
 import com.example.editphoto.databinding.FragmentCutBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.OnApplyListener
+import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 
 class CutFragment : Fragment(), OnApplyListener {

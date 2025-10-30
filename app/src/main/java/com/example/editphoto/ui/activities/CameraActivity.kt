@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.util.Size
 import android.util.TypedValue
 import android.view.ScaleGestureDetector
 import android.widget.TextView
@@ -31,7 +30,7 @@ import com.example.editphoto.base.BaseActivity
 import com.example.editphoto.databinding.ActivityCameraBinding
 import com.example.editphoto.utils.Const.ASPECT_RATIO_FULL
 import com.example.editphoto.utils.Const.MAX_ZOOM_RATIO
-import com.example.editphoto.utils.showImageGlide
+import com.example.editphoto.utils.extent.showImageGlide
 import com.example.editphoto.viewmodel.CameraViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
