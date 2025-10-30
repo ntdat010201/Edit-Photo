@@ -1,13 +1,11 @@
 package com.example.editphoto.ui.activities
 
-import android.content.ContentValues
 import android.graphics.Bitmap
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.SeekBar
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
@@ -29,6 +27,7 @@ import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.ui.fragments.WhiteFragment
+import com.example.editphoto.utils.OnApplyListener
 import com.example.editphoto.utils.SeekBarController
 import com.example.editphoto.utils.listAdjust
 import com.example.editphoto.utils.listAdjustSub
@@ -51,6 +50,9 @@ class EditImageActivity : BaseActivity() {
     private var faceLandmarker: FaceLandmarker? = null
     private var currentSeekBarController: SeekBarController? = null
 
+    private var currentFeatureType: FeatureType? = null
+    private var currentSubType: SubType? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditImageBinding.inflate(layoutInflater)
@@ -62,68 +64,124 @@ class EditImageActivity : BaseActivity() {
         observeViewModel()
     }
 
-
     private fun initData() {
-        //opencv
         if (!OpenCVLoader.initDebug()) {
             throw IllegalStateException("OpenCV failed to load")
         }
-        // mediaPipe
+
         setupFaceLandmarker()
 
         val uriString = intent.getStringExtra("image_uri")
-
         originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, uriString?.toUri())
         viewModel.setOriginalBitmap(originalBitmap!!)
 
+        featuresAdapter = MainFeaturesAdapter(listAdjust)
         binding.rvMainFeatures.apply {
-            featuresAdapter = MainFeaturesAdapter(listAdjust)
-            layoutManager =
-                LinearLayoutManager(this@EditImageActivity, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = if (listAdjust.size <= 5) {
+                FlexboxLayoutManager(this@EditImageActivity).apply {
+                    flexDirection = FlexDirection.ROW
+                    justifyContent = JustifyContent.SPACE_BETWEEN
+                }
+            } else {
+                LinearLayoutManager(
+                    this@EditImageActivity,
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+                ).also {
+                    LinearSnapHelper().attachToRecyclerView(this@apply)
+                }
+            }
             adapter = featuresAdapter
         }
     }
 
     private fun initView() {
+/*
         showImageGlide(this, originalBitmap!!, binding.imgPreview)
+*/
 
+        currentFeatureType = FeatureType.ADJUST
+        currentSubType = SubType.CUT
 
         showSubOptionsAdjust(listAdjustSub)
-
         supportFragmentManager.beginTransaction()
             .replace(R.id.editContainer, CutFragment())
             .commit()
-    }
 
+        binding.editContainer.visibility = View.VISIBLE
+    }
 
     private fun observeViewModel() {
         viewModel.editedBitmap.observe(this) { bitmap ->
+            Log.d("DAT", "observeViewModel: " + "bitmap")
             binding.imgPreview.setImageBitmap(bitmap)
         }
 
         viewModel.previewBitmap.observe(this) { preview ->
             if (preview != null) {
                 binding.imgPreview.setImageBitmap(preview)
+                Log.d("DAT", "observeViewModel: " + "preview")
+
             } else {
+                Log.d("DAT", "observeViewModel: " + "preview null")
                 viewModel.editedBitmap.value?.let { binding.imgPreview.setImageBitmap(it) }
+
             }
         }
     }
 
     private fun initListener() {
         featuresAdapter.onItemClick = { item ->
-            when (item.type) {
-                FeatureType.ADJUST -> showSubOptionsAdjust(listAdjustSub)
-                FeatureType.FACE -> showSubOptionsFace(listFaceSub)
-                FeatureType.STICKER -> showSubOptionsFace(listFaceSub)
+            if (currentFeatureType == item.type) {
+                //
+            } else {
+                currentFeatureType = item.type
+                currentSubType = null
+
+                when (item.type) {
+                    FeatureType.ADJUST -> {
+                        showSubOptionsAdjust(listAdjustSub)
+                        currentSubType = SubType.CUT
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.editContainer, CutFragment())
+                            .commit()
+                        binding.editContainer.visibility = View.VISIBLE
+                    }
+
+                    FeatureType.FACE -> {
+                        showSubOptionsFace(listFaceSub)
+                        currentSubType = SubType.LIPS
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.editContainer, LipsFragment())
+                            .commit()
+                        binding.editContainer.visibility = View.VISIBLE
+                    }
+
+                    FeatureType.STICKER -> {
+                        showSubOptionsFace(listFaceSub)
+                        currentSubType = SubType.LIPS
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.editContainer, LipsFragment())
+                            .commit()
+                        binding.editContainer.visibility = View.VISIBLE
+                    }
+                }
+            }
+        }
+
+        binding.imgApply.setOnClickListener {
+            val fragment = supportFragmentManager.findFragmentById(R.id.editContainer)
+            if (fragment is OnApplyListener) {
+                fragment.onApply()
             }
         }
 
     }
 
+
     private fun setupFaceLandmarker() {
         val baseOptions = BaseOptions.builder()
-            .setModelAssetPath("face_landmarker.task") // Load assets
+            .setModelAssetPath("face_landmarker.task")
             .build()
         val options = FaceLandmarker.FaceLandmarkerOptions.builder()
             .setBaseOptions(baseOptions)
@@ -137,9 +195,7 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun showSubOptionsAdjust(list: List<SubModel>) {
-
         val subAdapter = SubOptionsAdapter(list)
-
         binding.rvSubOptions.apply {
             layoutManager = if (list.size <= 5) {
                 FlexboxLayoutManager(this@EditImageActivity).apply {
@@ -159,25 +215,31 @@ class EditImageActivity : BaseActivity() {
         }
 
         subAdapter.onItemClick = { item ->
-            val fragment = when (item.type) {
-                SubType.CUT -> CutFragment()
-                SubType.FLIP -> FlipFragment()
-                SubType.TURN -> TurnFragment()
-                else -> null
+            if (currentSubType == item.type) {
+                //
+            } else {
+                currentSubType = item.type
 
-            }
-            fragment?.let {
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.editContainer, it)
-                    .addToBackStack(null)
-                    .commit()
+                val fragment = when (item.type) {
+                    SubType.CUT -> CutFragment()
+                    SubType.FLIP -> FlipFragment()
+                    SubType.TURN -> TurnFragment()
+                    else -> null
+                }
+
+                fragment?.let {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.editContainer, it)
+                        .commit()
+                    binding.editContainer.visibility = View.VISIBLE
+                }
             }
         }
+
     }
 
     private fun showSubOptionsFace(list: List<SubModel>) {
         val subAdapter = SubOptionsAdapter(list)
-
         binding.rvSubOptions.apply {
             if (list.size <= 5) {
                 layoutManager = FlexboxLayoutManager(context).apply {
@@ -190,31 +252,41 @@ class EditImageActivity : BaseActivity() {
             }
             adapter = subAdapter
         }
-        subAdapter.onItemClick = { item ->
-            val fragment = when (item.type) {
-                SubType.LIPS -> LipsFragment()
-                SubType.EYES -> EyesFragment()
-                SubType.CHEEKS -> CheeksFragment()
-                SubType.WHITE -> WhiteFragment()
-                SubType.BLUR -> BlurFragment()
-                else -> null
 
-            }
-            fragment?.let {
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.editContainer, it)
-                    .addToBackStack(null)
-                    .commit()
+        subAdapter.onItemClick = { item ->
+            if (currentSubType == item.type) {
+                //
+            } else {
+                currentSubType = item.type
+
+                val fragment = when (item.type) {
+                    SubType.LIPS -> LipsFragment()
+                    SubType.EYES -> EyesFragment()
+                    SubType.CHEEKS -> CheeksFragment()
+                    SubType.WHITE -> WhiteFragment()
+                    SubType.BLUR -> BlurFragment()
+                    else -> null
+                }
+
+                fragment?.let {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.editContainer, it)
+                        .commit()
+                    binding.editContainer.visibility = View.VISIBLE
+                }
             }
         }
+
     }
 
     fun enableCropMode() {
         binding.imgPreview.visibility = View.GONE
         binding.cropImageView.visibility = View.VISIBLE
 
-        // crop view
-        viewModel.editedBitmap.value?.let {
+       var beforeCropBitmap = viewModel.previewBitmap.value
+            ?: viewModel.editedBitmap.value
+
+        beforeCropBitmap.let {
             binding.cropImageView.setImageBitmap(it)
             binding.cropImageView.setFixedAspectRatio(true)
         }
@@ -225,33 +297,9 @@ class EditImageActivity : BaseActivity() {
         binding.imgPreview.visibility = View.VISIBLE
     }
 
-    private fun saveEditedImageToGallery() {
-        viewModel.editedBitmap.value?.let { bitmap ->
-            val contentValues = ContentValues().apply {
-                put(
-                    MediaStore.Images.Media.DISPLAY_NAME,
-                    "edited_image_${System.currentTimeMillis()}.jpg"
-                )
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/EditPhoto")
-                }
-            }
-
-            val uri =
-                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            uri?.let {
-                contentResolver.openOutputStream(it).use { outputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream!!)
-                }
-                Toast.makeText(this, "Ảnh đã lưu vào Gallery", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     override fun onStart() {
         super.onStart()
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             v.setPadding(0, 0, 0, 0)
             insets
@@ -274,9 +322,7 @@ class EditImageActivity : BaseActivity() {
         binding.seekBarIntensity.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    controller.onIntensityChanged(progress / 100f)
-                }
+                if (fromUser) controller.onIntensityChanged(progress / 100f)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -289,4 +335,5 @@ class EditImageActivity : BaseActivity() {
         binding.seekbar.visibility = View.GONE
         binding.seekBarIntensity.setOnSeekBarChangeListener(null)
     }
+
 }

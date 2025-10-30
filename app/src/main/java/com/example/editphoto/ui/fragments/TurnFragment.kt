@@ -2,125 +2,94 @@ package com.example.editphoto.ui.fragments
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentTurnBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.handleBackPressedCommon
-import com.example.editphoto.utils.handlePhysicalBackPress
+import com.example.editphoto.utils.OnApplyListener
 
-class TurnFragment : Fragment() {
+class TurnFragment : Fragment(), OnApplyListener {
 
     private lateinit var binding: FragmentTurnBinding
-    private var beforeRotateBitmap: Bitmap? = null
+    private lateinit var parentActivity: EditImageActivity
 
-    private var hasPreview = false
-    private var hasApplied = false
-    private var currentRotation = 0f
+    private var beforeRotateBitmap: Bitmap? = null
+    private var tempRotatedBitmap: Bitmap? = null
+    private var currentBitmap: Bitmap? = null
+
     private var totalRotation = 0f
+    private var hasApplied = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentTurnBinding.inflate(inflater, container, false)
+        parentActivity = requireActivity() as EditImageActivity
+
+        initData()
         initView()
+        initRuler()
         initListener()
+
         return binding.root
     }
 
+    private fun initData() {
+        beforeRotateBitmap = parentActivity.viewModel.previewBitmap.value
+            ?: parentActivity.viewModel.editedBitmap.value
+                    ?: parentActivity.viewModel.originalBitmap.value
+
+        currentBitmap = beforeRotateBitmap
+        totalRotation = 0f
+    }
+
     private fun initView() {
+        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+    }
+
+    private fun initRuler() {
         binding.rotationRuler.onDegreeChange = { degree ->
-            val act = requireActivity() as EditImageActivity
-            val vm = act.viewModel
-            val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
-            bitmap?.let {
-                val rotated = rotateBitmap(it, degree)
-                vm.setPreview(rotated)
-                act.binding.imgPreview.setImageBitmap(rotated)
+            currentBitmap?.let {
+                val rotated = rotateBitmap(beforeRotateBitmap ?: it, totalRotation + degree)
+                tempRotatedBitmap = rotated
+                parentActivity.binding.imgPreview.setImageBitmap(rotated)
             }
         }
     }
 
     private fun initListener() {
-        val act = requireActivity() as EditImageActivity
-        val vm = act.viewModel
-
-        beforeRotateBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-
         binding.turn90.setOnClickListener {
-            totalRotation += 90f
-            val bitmap = vm.editedBitmap.value ?: getBitmapFromImageView(act)
-            bitmap?.let {
-                val rotated = rotateBitmap(it, totalRotation + currentRotation)
-                vm.setPreview(rotated)
-                act.binding.imgPreview.setImageBitmap(rotated)
-                hasPreview = true
-                hasApplied = false
+            currentBitmap?.let {
+                totalRotation = (totalRotation + 90f) % 360f
+
+                binding.rotationRuler.setDegree(0f)
+
+                val rotated = rotateBitmap(beforeRotateBitmap ?: it, totalRotation)
+                tempRotatedBitmap = rotated
+                currentBitmap = rotated
+                parentActivity.binding.imgPreview.setImageBitmap(rotated)
             }
-        }
-
-
-        binding.btnApply.setOnClickListener {
-            vm.commitPreview()
-            beforeRotateBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-            hasPreview = false
-            hasApplied = true
-            totalRotation += currentRotation
-            currentRotation = 0f
-            parentFragmentManager.popBackStack()
-        }
-
-        binding.btnReset.setOnClickListener {
-            if (hasPreview) {
-                beforeRotateBitmap?.let { originalBeforeRotate ->
-                    vm.setPreview(null)
-                    act.binding.imgPreview.setImageBitmap(originalBeforeRotate)
-                }
-                hasPreview = false
-                totalRotation = 0f
-                currentRotation = 0f
-            }
-        }
-
-        binding.btnBack.setOnClickListener {
-            val act = requireActivity() as EditImageActivity
-            handleBackPressedCommon(act, hasApplied, beforeRotateBitmap)
-        }
-
-        handlePhysicalBackPress { act ->
-            handleBackPressedCommon(act, hasApplied, beforeRotateBitmap)
         }
     }
 
-    private fun handlePhysicalBackPress() {
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            val act = requireActivity() as EditImageActivity
-            handleBackPressed(act)
-        }
+    override fun onApply() {
+        val vm = parentActivity.viewModel
+        val bitmap = tempRotatedBitmap ?: currentBitmap ?: return
+        vm.setPreview(bitmap)
+        hasApplied = true
     }
 
-    private fun handleBackPressed(act: EditImageActivity) {
-        val vm = act.viewModel
-        if (!hasApplied && hasPreview) {
-            beforeRotateBitmap?.let { originalBeforeRotate ->
-                act.binding.imgPreview.setImageBitmap(originalBeforeRotate)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (!hasApplied) {
+            beforeRotateBitmap?.let {
+                parentActivity.binding.imgPreview.setImageBitmap(it)
             }
-            vm.setPreview(null)
-            totalRotation = 0f
-            currentRotation = 0f
         }
-        parentFragmentManager.popBackStack()
-    }
-
-    private fun getBitmapFromImageView(act: EditImageActivity): Bitmap? {
-        val drawable = act.binding.imgPreview.drawable
-        return if (drawable is BitmapDrawable) drawable.bitmap else null
     }
 
     private fun rotateBitmap(source: Bitmap, degrees: Float): Bitmap {
@@ -129,6 +98,5 @@ class TurnFragment : Fragment() {
         }
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
-
 
 }

@@ -104,4 +104,11 @@ class RotationRulerView @JvmOverloads constructor(
 
     private fun spToPx(sp: Float): Float =
         sp * context.resources.displayMetrics.scaledDensity
+
+    fun setDegree(degree: Float) {
+        offsetX = -degree / degreePerTick * tickSpacing
+        currentDegree = degree
+        invalidate()
+    }
+
 }

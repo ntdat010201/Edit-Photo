@@ -46,47 +46,15 @@
         </LinearLayout>
 
         <com.example.editphoto.view.RotationRulerView
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/turn90"
+            app:layout_constraintBottom_toBottomOf="@+id/turn90"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/turn90"
             android:id="@+id/rotationRuler"
             android:layout_width="0dp"
-            android:layout_height="60dp" />
+            android:layout_height="0dp" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-    <Button
-        android:layout_marginTop="@dimen/_8sdp"
-        android:id="@+id/btnApply"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Áp dụng"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraint_Tools" />
-
-    <Button
-        android:id="@+id/btnReset"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="reset"
-        app:layout_constraintBottom_toBottomOf="@id/btnApply"
-        app:layout_constraintEnd_toStartOf="@+id/btnBack"
-        app:layout_constraintStart_toEndOf="@+id/btnApply"
-        app:layout_constraintTop_toTopOf="@id/btnApply" />
-
-
-    <Button
-        android:id="@+id/btnBack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Quay lại"
-        app:layout_constraintBottom_toBottomOf="@id/btnApply"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnApply" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

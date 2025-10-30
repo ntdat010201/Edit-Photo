@@ -46,6 +46,10 @@ class MainActivity : BaseActivity() {
                 startActivity(Intent(this, GalleryActivity::class.java))
             }
         }
+
+        binding.constraintHistory.setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
     }
 
     private fun openCamera() {

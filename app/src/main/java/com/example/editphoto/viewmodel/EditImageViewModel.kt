@@ -27,8 +27,9 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
 
 
     fun updateBitmap(bitmap: Bitmap) {
-        editedBitmap.postValue(bitmap)
+        editedBitmap.value = bitmap
     }
+
 
 
     fun setOriginalBitmap(bitmap: Bitmap) {
@@ -48,14 +49,14 @@ class EditImageViewModel(application: Application) : AndroidViewModel(applicatio
 
 
     fun setPreview(bitmap: Bitmap?) {
-        previewBitmap.postValue(bitmap)
+        previewBitmap.value = bitmap
     }
 
     fun commitPreview() {
         previewBitmap.value?.let { bmp ->
             val config = bmp.config ?: Bitmap.Config.ARGB_8888
-            updateBitmap(bmp.copy(config, true))  // Copy để tránh reference chung
-            previewBitmap.postValue(null)
+            editedBitmap.value = bmp.copy(config, true)
+            previewBitmap.value = null
         }
     }
 

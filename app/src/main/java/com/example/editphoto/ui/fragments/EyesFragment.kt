@@ -101,24 +101,6 @@ class EyesFragment : Fragment(), SeekBarController {
         binding.eyeCorner.setOnClickListener {
             selectOption(binding.ivIconEyeCorner, binding.borderEyeCorner, "corner")
         }
-
-        binding.btnApply.setOnClickListener {
-            viewModel.commitPreview()
-            hasApplied = true
-            beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-            act.detachSeekBar()
-            parentFragmentManager.popBackStack()
-        }
-
-        binding.btnBack.setOnClickListener {
-            handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
-            act.detachSeekBar()
-        }
-
-        handlePhysicalBackPress { activity ->
-            handleBackPressedCommon(activity, hasApplied, beforeEditBitmap)
-            act.detachSeekBar()
-        }
     }
 
     private fun selectOption(optionView: ImageView, borderView: ImageView, mode: String) {

@@ -2,21 +2,24 @@ package com.example.editphoto.ui.fragments
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentFlipBinding
 import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.OnApplyListener
 
-class FlipFragment : Fragment() {
+class FlipFragment : Fragment(), OnApplyListener {
 
     private lateinit var binding: FragmentFlipBinding
+    private lateinit var parentActivity: EditImageActivity
+
     private var beforeFlipBitmap: Bitmap? = null
-    private var hasPreview = false
+    private var tempFlippedBitmap: Bitmap? = null
+    private var currentBitmap: Bitmap? = null
+
     private var hasApplied = false
 
     override fun onCreateView(
@@ -24,85 +27,43 @@ class FlipFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentFlipBinding.inflate(inflater, container, false)
+        parentActivity = requireActivity() as EditImageActivity
+        initData()
+        initView()
         initListener()
-        handlePhysicalBackPress()
         return binding.root
     }
 
+    private fun initData() {
+        beforeFlipBitmap = parentActivity.viewModel.previewBitmap.value
+            ?: parentActivity.viewModel.editedBitmap.value
+                    ?: parentActivity.viewModel.originalBitmap.value
+
+        currentBitmap = beforeFlipBitmap
+    }
+
+    private fun initView() {
+        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+    }
+
     private fun initListener() {
-        val act = requireActivity() as EditImageActivity
-        val vm = act.viewModel
-
-        beforeFlipBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-
         binding.constraintHorizontal.setOnClickListener {
-            val bitmap =
-                vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
-            bitmap?.let {
+            currentBitmap?.let {
                 val flipped = flipBitmap(it, horizontal = true)
-                vm.setPreview(flipped)
-                act.binding.imgPreview.setImageBitmap(flipped)
-                hasPreview = true
-                hasApplied = false
+                tempFlippedBitmap = flipped
+                currentBitmap = flipped
+                parentActivity.binding.imgPreview.setImageBitmap(flipped)
             }
         }
 
         binding.constraintVertical.setOnClickListener {
-            val bitmap =
-                vm.previewBitmap.value ?: vm.editedBitmap.value ?: getBitmapFromImageView(act)
-            bitmap?.let {
+            currentBitmap?.let {
                 val flipped = flipBitmap(it, horizontal = false)
-                vm.setPreview(flipped)
-                act.binding.imgPreview.setImageBitmap(flipped)
-                hasPreview = true
-                hasApplied = false
+                tempFlippedBitmap = flipped
+                currentBitmap = flipped
+                parentActivity.binding.imgPreview.setImageBitmap(flipped)
             }
         }
-
-        binding.btnApply.setOnClickListener {
-            vm.commitPreview()
-            beforeFlipBitmap = vm.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-            hasPreview = false
-            hasApplied = true
-            parentFragmentManager.popBackStack()
-        }
-
-        binding.btnReset.setOnClickListener {
-            if (hasPreview) {
-                beforeFlipBitmap?.let { originalBeforeFlip ->
-                    vm.setPreview(null)
-                    act.binding.imgPreview.setImageBitmap(originalBeforeFlip)
-                }
-                hasPreview = false
-            }
-        }
-
-        binding.btnBack.setOnClickListener {
-            handleBackPressed(act)
-        }
-    }
-
-    private fun handlePhysicalBackPress() {
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            val act = requireActivity() as EditImageActivity
-            handleBackPressed(act)
-        }
-    }
-
-    private fun handleBackPressed(act: EditImageActivity) {
-        val vm = act.viewModel
-        if (!hasApplied && hasPreview) {
-            beforeFlipBitmap?.let { originalBeforeFlip ->
-                act.binding.imgPreview.setImageBitmap(originalBeforeFlip)
-            }
-            vm.setPreview(null)
-        }
-        parentFragmentManager.popBackStack()
-    }
-
-    private fun getBitmapFromImageView(act: EditImageActivity): Bitmap? {
-        val drawable = act.binding.imgPreview.drawable
-        return if (drawable is BitmapDrawable) drawable.bitmap else null
     }
 
     private fun flipBitmap(source: Bitmap, horizontal: Boolean): Bitmap {
@@ -114,5 +75,23 @@ class FlipFragment : Fragment() {
             }
         }
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+    }
+
+    override fun onApply() {
+        val bitmap = tempFlippedBitmap ?: currentBitmap ?: return
+
+        parentActivity.viewModel.setPreview(bitmap)
+        parentActivity.viewModel.commitPreview()
+
+        hasApplied = true
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (!hasApplied) {
+            beforeFlipBitmap?.let {
+                parentActivity.binding.imgPreview.setImageBitmap(it)
+            }
+        }
     }
 }

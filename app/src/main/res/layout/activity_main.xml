@@ -83,7 +83,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bgr_radius_gray"
-        app:layout_constraintEnd_toStartOf="@+id/constraint_4"
+        app:layout_constraintEnd_toStartOf="@+id/constraintHistory"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/constraint_camera">
 
@@ -127,7 +127,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_marginEnd="@dimen/_12sdp"
         android:layout_marginStart="@dimen/_6sdp"
-        android:id="@+id/constraint_4"
+        android:id="@+id/constraintHistory"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bgr_radius_gray"

@@ -2,14 +2,17 @@ package com.example.editphoto.ui.fragments
 
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentLipsBinding
 import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.OnApplyListener
 import com.example.editphoto.utils.SeekBarController
 import com.example.editphoto.utils.handleBackPressedCommon
 import com.example.editphoto.utils.handlePhysicalBackPress
@@ -32,11 +35,11 @@ import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
-class LipsFragment : Fragment(), SeekBarController {
+class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
 
     private lateinit var binding: FragmentLipsBinding
     private lateinit var viewModel: EditImageViewModel
-    private lateinit var act: EditImageActivity
+    private lateinit var parentActivity: EditImageActivity
 
     private var beforeEditBitmap: Bitmap? = null
     private var hasApplied = false
@@ -67,8 +70,8 @@ class LipsFragment : Fragment(), SeekBarController {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        act = requireActivity() as EditImageActivity
-        viewModel = act.viewModel
+        parentActivity = requireActivity() as EditImageActivity
+        viewModel = parentActivity.viewModel
 
         initData()
         initView()
@@ -76,7 +79,10 @@ class LipsFragment : Fragment(), SeekBarController {
     }
 
     private fun initData() {
-        beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+        beforeEditBitmap = parentActivity.viewModel.previewBitmap.value
+            ?: parentActivity.viewModel.editedBitmap.value
+                    ?: parentActivity.viewModel.originalBitmap.value
+
     }
 
     private fun initView() {
@@ -114,34 +120,12 @@ class LipsFragment : Fragment(), SeekBarController {
             selectColor(binding.earthyBrown, binding.borderEarthyBrown, Scalar(122.0, 6.0, 6.0))
         }
 
-        // === NÚT ===
-        binding.btnApply.setOnClickListener {
-            viewModel.commitPreview()
-            hasApplied = true
-            beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-            act.detachSeekBar()
-            parentFragmentManager.popBackStack()
-        }
-
-        binding.btnReset.setOnClickListener {
-            if (!hasApplied) {
-                resetLipToOriginal()
-                selectColor(binding.colorless, binding.borderColorless, COLORLESS)
-            }
-        }
-
-        binding.btnBack.setOnClickListener {
-            handleBackPressedCommon(act, hasApplied, beforeEditBitmap)
-            act.detachSeekBar()
-        }
-
         handlePhysicalBackPress { activity ->
             handleBackPressedCommon(activity, hasApplied, beforeEditBitmap)
-            act.detachSeekBar()
+            parentActivity.detachSeekBar()
         }
     }
 
-    // === CHỌN MÀU + QUẢN LÝ SEEKBAR ===
     private fun selectColor(colorView: ImageView, borderView: ImageView, color: Scalar) {
         selectedBorderView?.visibility = View.GONE
 
@@ -150,15 +134,13 @@ class LipsFragment : Fragment(), SeekBarController {
         selectedBorderView = borderView
 
         if (color == COLORLESS) {
-            // colorless → reset môi + ẨN SeekBar
             resetLipToOriginal()
-            act.detachSeekBar()
+            parentActivity.detachSeekBar()
         } else {
-            // Màu khác → hiện SeekBar + set intensity
             selectedColor = color
             intensity = 0.0f
-            act.attachSeekBar(this)
-            act.binding.seekBarIntensity.progress = 0
+            parentActivity.attachSeekBar(this)
+            parentActivity.binding.seekBarIntensity.progress = 0
             scheduleRealtimePreview()
         }
     }
@@ -179,7 +161,7 @@ class LipsFragment : Fragment(), SeekBarController {
     // === SEEKBAR CALLBACK ===
     override fun onIntensityChanged(intensity: Float) {
         if (selectedColor == COLORLESS) {
-            act.detachSeekBar()
+            parentActivity.detachSeekBar()
             return
         }
         this.intensity = intensity
@@ -225,7 +207,7 @@ class LipsFragment : Fragment(), SeekBarController {
 
             val bitmapOut = preview.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.setPreview(bitmapOut)
+                parentActivity.binding.imgPreview.setImageBitmap(bitmapOut)
             }
         }
     }
@@ -270,8 +252,16 @@ class LipsFragment : Fragment(), SeekBarController {
         return blended
     }
 
+    override fun onApply() {
+        val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
+        viewModel.setPreview(currentBitmap)
+        viewModel.commitPreview()
+        hasApplied = true
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        act.detachSeekBar()
+
+        parentActivity.detachSeekBar()
     }
 }
