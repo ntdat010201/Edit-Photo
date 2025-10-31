@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\Dat\Desktop\Edit Photo\sdk\.cxx\Debug\84u3l61w\x86'
+ninja: no work to do.

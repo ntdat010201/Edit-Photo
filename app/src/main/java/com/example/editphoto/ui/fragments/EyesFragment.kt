@@ -69,11 +69,11 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         act = requireActivity() as EditImageActivity
         viewModel = act.viewModel
 
-/*
-        // Lưu ảnh gốc trước khi chỉnh
-        beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-            ?: viewModel.originalBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-*/
+        /*
+                // Lưu ảnh gốc trước khi chỉnh
+                beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+                    ?: viewModel.originalBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+        */
 
         beforeEditBitmap = act.viewModel.previewBitmap.value
             ?: act.viewModel.editedBitmap.value
@@ -228,7 +228,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
 
             val bitmapOut = dst.toBitmap()
             withContext(Dispatchers.Main) {
-               /* viewModel.setPreview(bitmapOut)*/
+                /* viewModel.setPreview(bitmapOut)*/
                 act.binding.imgPreview.setImageBitmap(bitmapOut)
             }
             dst.release()
