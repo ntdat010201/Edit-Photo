@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.PointF
+import android.graphics.Path
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -69,7 +69,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
     private fun initData() {
         beforeEditBitmap = parentActivity.viewModel.previewBitmap.value
             ?: parentActivity.viewModel.editedBitmap.value
-            ?: parentActivity.viewModel.originalBitmap.value
+                    ?: parentActivity.viewModel.originalBitmap.value
     }
 
     private fun initView() {
@@ -82,22 +82,46 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         }
         // Các màu má hồng (BGR) khớp với layout fragment_cheeks.xml
         binding.colorBlush1.setOnClickListener {
-            selectColor(binding.colorBlush1, binding.borderColorBlush1, ColorScalar(193.0, 182.0, 255.0)) // Soft Pink
+            selectColor(
+                binding.colorBlush1,
+                binding.borderColorBlush1,
+                ColorScalar(193.0, 182.0, 255.0)
+            ) // Soft Pink
         }
         binding.colorBlush2.setOnClickListener {
-            selectColor(binding.colorBlush2, binding.borderColorBlush2, ColorScalar(122.0, 160.0, 255.0)) // Peach
+            selectColor(
+                binding.colorBlush2,
+                binding.borderColorBlush2,
+                ColorScalar(122.0, 160.0, 255.0)
+            ) // Peach
         }
         binding.colorBlush3.setOnClickListener {
-            selectColor(binding.colorBlush3, binding.borderColorBlush3, ColorScalar(171.0, 130.0, 255.0)) // Rose
+            selectColor(
+                binding.colorBlush3,
+                binding.borderColorBlush3,
+                ColorScalar(171.0, 130.0, 255.0)
+            ) // Rose
         }
         binding.colorBlush4.setOnClickListener {
-            selectColor(binding.colorBlush4, binding.borderColorBlush4, ColorScalar(80.0, 127.0, 255.0)) // Coral
+            selectColor(
+                binding.colorBlush4,
+                binding.borderColorBlush4,
+                ColorScalar(80.0, 127.0, 255.0)
+            ) // Coral
         }
         binding.colorBlush5.setOnClickListener {
-            selectColor(binding.colorBlush5, binding.borderColorBlush5, ColorScalar(172.0, 160.0, 233.0)) // Warm Rose
+            selectColor(
+                binding.colorBlush5,
+                binding.borderColorBlush5,
+                ColorScalar(172.0, 160.0, 233.0)
+            ) // Warm Rose
         }
         binding.colorBlush6.setOnClickListener {
-            selectColor(binding.colorBlush6, binding.borderColorBlush6, ColorScalar(63.0, 133.0, 205.0)) // Nude
+            selectColor(
+                binding.colorBlush6,
+                binding.borderColorBlush6,
+                ColorScalar(63.0, 133.0, 205.0)
+            ) // Nude
         }
     }
 
@@ -160,11 +184,10 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
             val result = landmarker.detect(mpImage)
             if (result.faceLandmarks().isNotEmpty()) {
                 cachedLandmarks = result.faceLandmarks()[0]
-                val (lc, rc, rPix) = computeCheekCentersAndRadius(bitmap, cachedLandmarks!!)
-                val w = bitmap.width
-                val h = bitmap.height
-                leftCheekMask = makeFeatherCircleMask(w, h, lc, rPix, feather = (h * 0.01f).toInt().coerceAtLeast(6))
-                rightCheekMask = makeFeatherCircleMask(w, h, rc, rPix, feather = (h * 0.01f).toInt().coerceAtLeast(6))
+                val leftMask = createCheekMaskBitmap(bitmap, cachedLandmarks!!, isLeft = true)
+                val rightMask = createCheekMaskBitmap(bitmap, cachedLandmarks!!, isLeft = false)
+                leftCheekMask = leftMask
+                rightCheekMask = rightMask
                 baseBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
             }
         }
@@ -185,51 +208,35 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         }
     }
 
-    private fun computeCheekCentersAndRadius(
+    private fun createCheekMaskBitmap(
         bitmap: Bitmap,
-        landmarks: List<NormalizedLandmark>
-    ): Triple<PointF, PointF, Float> {
-        val w = bitmap.width.toFloat()
-        val h = bitmap.height.toFloat()
-
-        var minX = 1f; var maxX = 0f; var minY = 1f; var maxY = 0f
-        for (lm in landmarks) {
-            val x = lm.x().toFloat(); val y = lm.y().toFloat()
-            if (x < minX) minX = x
-            if (x > maxX) maxX = x
-            if (y < minY) minY = y
-            if (y > maxY) maxY = y
-        }
-        val faceWidth = (maxX - minX) * w
-        val faceHeight = (maxY - minY) * h
-
-        val noseIdx = 1 // mốc mũi (ước lượng)
-        val noseX = landmarks[noseIdx].x() * w
-        val noseY = landmarks[noseIdx].y() * h
-
-        val leftCenter = PointF(
-            (noseX - 0.19f * faceWidth).coerceIn(0f, w),
-            (noseY + 0.07f * faceHeight).coerceIn(0f, h)
-        )
-        val rightCenter = PointF(
-            (noseX + 0.19f * faceWidth).coerceIn(0f, w),
-            (noseY + 0.07f * faceHeight).coerceIn(0f, h)
-        )
-        val radius = (0.12f * faceWidth).coerceIn(h * 0.05f, h * 0.18f)
-        return Triple(leftCenter, rightCenter, radius)
-    }
-
-    private fun makeFeatherCircleMask(w: Int, h: Int, c: PointF, r: Float, feather: Int): Bitmap {
+        landmarks: List<NormalizedLandmark>,
+        isLeft: Boolean
+    ): Bitmap {
+        val w = bitmap.width
+        val h = bitmap.height
         val mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(mask)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
-        canvas.drawCircle(c.x, c.y, r, paint)
-        return blurMaskAlpha(mask, feather)
+        val path = Path()
+        val paint =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.WHITE }
+
+        //  gò má  (ước lượng dựa FaceMesh)
+        val idx = if (isLeft) listOf(234, 93, 132, 58, 172, 136, 150, 149) else listOf(454, 323, 361, 288, 397, 365, 379, 378)
+        for ((i, id) in idx.withIndex()) {
+            val x = landmarks[id].x() * w
+            val y = landmarks[id].y() * h
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        canvas.drawPath(path, paint)
+        return blurMaskAlpha(mask, radius = (h * 0.012f).toInt().coerceAtLeast(6))
     }
 
     private fun blurMaskAlpha(src: Bitmap, radius: Int): Bitmap {
         val r = radius.coerceAtLeast(1)
-        val w = src.width; val h = src.height
+        val w = src.width;
+        val h = src.height
         val tmp = src.copy(Bitmap.Config.ARGB_8888, true)
         val tmpPixels = IntArray(w * h)
         val outPixels = IntArray(w * h)
@@ -278,7 +285,8 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         colorBGR: ColorScalar,
         intensity: Float
     ): Bitmap {
-        val w = base.width; val h = base.height
+        val w = base.width;
+        val h = base.height
         val out = base.copy(Bitmap.Config.ARGB_8888, true)
         val basePixels = IntArray(w * h)
         val maskPixels = IntArray(w * h)
@@ -339,13 +347,19 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         val Y = R * 0.2126 + G * 0.7152 + B * 0.0722
         val Z = R * 0.0193 + G * 0.1192 + B * 0.9505
 
-        val Xn = 0.95047; val Yn = 1.0; val Zn = 1.08883
-        var x = X / Xn; var y = Y / Yn; var z = Z / Zn
+        val Xn = 0.95047;
+        val Yn = 1.0;
+        val Zn = 1.08883
+        var x = X / Xn;
+        var y = Y / Yn;
+        var z = Z / Zn
 
         fun f(t: Double): Double =
             if (t > 0.008856) Math.cbrt(t) else (7.787 * t + 16.0 / 116.0)
 
-        val fx = f(x); val fy = f(y); val fz = f(z)
+        val fx = f(x);
+        val fy = f(y);
+        val fz = f(z)
         val L = 116.0 * fy - 16.0
         val a = 500.0 * (fx - fy)
         val bLab = 200.0 * (fy - fz)
@@ -362,7 +376,9 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
             return if (t3 > 0.008856) t3 else (t - 16.0 / 116.0) / 7.787
         }
 
-        val Xn = 0.95047; val Yn = 1.0; val Zn = 1.08883
+        val Xn = 0.95047;
+        val Yn = 1.0;
+        val Zn = 1.08883
         val X = Xn * fInv(fx)
         val Y = Yn * fInv(fy)
         val Z = Zn * fInv(fz)
