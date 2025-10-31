@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import com.example.editphoto.R
@@ -27,11 +28,11 @@ import com.example.editphoto.model.SubModel
 import com.example.editphoto.ui.fragments.BlurFragment
 import com.example.editphoto.ui.fragments.CheeksFragment
 import com.example.editphoto.ui.fragments.CutFragment
+import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.ui.fragments.EyesFragment
 import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
 import com.example.editphoto.ui.fragments.TurnFragment
-import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.utils.extent.listAdjust
 import com.example.editphoto.utils.extent.listAdjustSub
 import com.example.editphoto.utils.extent.listFaceSub
@@ -45,6 +46,10 @@ import com.google.android.flexbox.JustifyContent
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.opencv.android.OpenCVLoader
 import java.io.File
 
@@ -180,7 +185,18 @@ class EditImageActivity : BaseActivity() {
         binding.imgApply.setOnClickListener {
             val fragment = supportFragmentManager.findFragmentById(R.id.editContainer)
             if (fragment is OnApplyListener) {
+
                 fragment.onApply()
+
+                lifecycleScope.launch(Dispatchers.IO) {
+                    showApplyAnimationOnce()
+                    delay(1500)
+                    withContext(Dispatchers.Main) {
+                        binding.applyOverlay.visibility = View.GONE
+                        binding.imgApply.isEnabled = true
+                    }
+                }
+
             }
         }
 
@@ -196,8 +212,33 @@ class EditImageActivity : BaseActivity() {
             } else {
                 Toast.makeText(this, "Không có ảnh để lưu!", Toast.LENGTH_SHORT).show()
             }
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                showApplyAnimationOnce()
+                delay(1500)
+                withContext(Dispatchers.Main) {
+                    binding.applyOverlay.visibility = View.GONE
+                    binding.imgApply.isEnabled = true
+                }
+            }
         }
 
+    }
+
+    private fun showApplyAnimationOnce() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            binding.applyOverlay.visibility = View.VISIBLE
+            binding.imgApply.isEnabled = false
+
+            // animation
+            binding.applyProgress.scaleX = 0f
+            binding.applyProgress.scaleY = 0f
+            binding.applyProgress.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(400)
+                .start()
+        }
     }
 
 
@@ -369,7 +410,8 @@ class EditImageActivity : BaseActivity() {
             }
         }
 
-        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        val uri =
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
         if (uri != null) {
             contentResolver.openOutputStream(uri)?.use { outputStream ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)

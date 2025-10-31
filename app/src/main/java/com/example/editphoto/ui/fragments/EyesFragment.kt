@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentEyesBinding
@@ -13,6 +14,7 @@ import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.utils.extent.toBitmap
 import com.example.editphoto.utils.extent.toMat
+import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +26,7 @@ import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import kotlin.math.*
 
-class EyesFragment : Fragment(), SeekBarController {
+class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
 
     private lateinit var binding: FragmentEyesBinding
     private lateinit var viewModel: EditImageViewModel
@@ -67,7 +69,17 @@ class EyesFragment : Fragment(), SeekBarController {
         act = requireActivity() as EditImageActivity
         viewModel = act.viewModel
 
+/*
+        // Lưu ảnh gốc trước khi chỉnh
         beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+            ?: viewModel.originalBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
+*/
+
+        beforeEditBitmap = act.viewModel.previewBitmap.value
+            ?: act.viewModel.editedBitmap.value
+                    ?: act.viewModel.originalBitmap.value
+
+
         prepareData()
         initView()
         initListener()
@@ -112,9 +124,8 @@ class EyesFragment : Fragment(), SeekBarController {
             act.detachSeekBar()
         } else {
             currentMode = mode
-            seekbarCenterMode = true // luôn bật giữa cho chỉnh mắt
+            seekbarCenterMode = true
             val value = eyeParams[mode] ?: 0f
-            // map giá trị -1..1 về seekbar 0..100
             val progress = ((value + 1f) / 2f * 100).toInt().coerceIn(0, 100)
             act.binding.seekBarIntensity.progress = progress
             act.attachSeekBar(this)
@@ -125,7 +136,7 @@ class EyesFragment : Fragment(), SeekBarController {
     private fun resetEyesToOriginal() {
         beforeEditBitmap?.let {
             viewModel.setPreview(null)
-            viewModel.updateBitmap(it)
+            viewModel.updateBitmap(it) // khôi phục ảnh gốc
         }
         eyeParams.replaceAll { _, _ -> 0f }
         baseBitmap = null
@@ -137,7 +148,6 @@ class EyesFragment : Fragment(), SeekBarController {
             act.detachSeekBar()
             return
         }
-        // Nếu là chế độ giữa => intensity 0..1 -> -1..+1
         val adjusted = if (seekbarCenterMode) (intensity * 2f - 1f) else intensity
         eyeParams[currentMode] = adjusted
         scheduleRealtimePreview()
@@ -218,13 +228,15 @@ class EyesFragment : Fragment(), SeekBarController {
 
             val bitmapOut = dst.toBitmap()
             withContext(Dispatchers.Main) {
-                viewModel.setPreview(bitmapOut)
+               /* viewModel.setPreview(bitmapOut)*/
+                act.binding.imgPreview.setImageBitmap(bitmapOut)
             }
             dst.release()
             src.release()
         }
     }
 
+    // === Các hàm xử lý ảnh (giữ nguyên) ===
     private fun calculateEyeRadius(center: Point, mat: Mat): Double {
         val avgDist = listOf(
             abs(center.x - 0), abs(center.x - mat.cols()),
@@ -351,8 +363,26 @@ class EyesFragment : Fragment(), SeekBarController {
         return Point(sx / max(1, points.size), sy / max(1, points.size))
     }
 
+    override fun onApply() {
+        val currentBitmap = act.binding.imgPreview.drawable?.toBitmap() ?: return
+
+        viewModel.setPreview(currentBitmap)
+        viewModel.commitPreview() // Lưu thay đổi vào editedBitmap
+        act.binding.imgPreview.setImageBitmap(currentBitmap)
+
+        hasApplied = true
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        applyJob?.cancel()
         act.detachSeekBar()
+
+        if (!hasApplied) {
+            beforeEditBitmap?.let {
+                act.binding.imgPreview.setImageBitmap(it)
+                viewModel.setPreview(null)
+            }
+        }
     }
 }
