@@ -11,20 +11,27 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.editphoto.databinding.FragmentEyesBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.inter.SeekBarController
-import com.example.editphoto.utils.extent.toBitmap
-import com.example.editphoto.utils.extent.toMat
 import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.opencv.core.*
+import org.opencv.android.Utils
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.Point
+import org.opencv.core.Rect
+import org.opencv.core.Scalar
+import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
 
@@ -34,15 +41,15 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
 
     private var beforeEditBitmap: Bitmap? = null
     private var hasApplied = false
-
+    private var selectedOptionView: ImageView? = null
+    private var selectedBorderView: ImageView? = null
     private var baseBitmap: Bitmap? = null
     private var leftEyeCenter = Point()
     private var rightEyeCenter = Point()
-    private var currentMode = "less"
-
-    // Chế độ seekbar giữa (50 = 0)
+    private var currentMode = "size"
     private var seekbarCenterMode = true
 
+    // Lưu trạng thái
     private val eyeParams = mutableMapOf(
         "size" to 0f,
         "height" to 0f,
@@ -53,43 +60,33 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
     )
 
     private var applyJob: Job? = null
-    private var selectedOptionView: ImageView? = null
-    private var selectedBorderView: ImageView? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         binding = FragmentEyesBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
         act = requireActivity() as EditImageActivity
         viewModel = act.viewModel
-
-        /*
-                // Lưu ảnh gốc trước khi chỉnh
-                beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-                    ?: viewModel.originalBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
-        */
 
         beforeEditBitmap = act.viewModel.previewBitmap.value
             ?: act.viewModel.editedBitmap.value
                     ?: act.viewModel.originalBitmap.value
 
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val act = requireActivity() as EditImageActivity
+        viewModel = act.viewModel
+
+        beforeEditBitmap = viewModel.editedBitmap.value?.copy(Bitmap.Config.ARGB_8888, true)
 
         prepareData()
-        initView()
-        initListener()
-    }
 
-    private fun initView() {
         selectOption(binding.ivIconEyeLess, binding.borderEyeLess, "less")
-    }
-
-    private fun initListener() {
         binding.eyeLess.setOnClickListener {
             selectOption(binding.ivIconEyeLess, binding.borderEyeLess, "less")
         }
@@ -111,6 +108,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         binding.eyeCorner.setOnClickListener {
             selectOption(binding.ivIconEyeCorner, binding.borderEyeCorner, "corner")
         }
+
     }
 
     private fun selectOption(optionView: ImageView, borderView: ImageView, mode: String) {
@@ -143,26 +141,6 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         prepareData()
     }
 
-    override fun onIntensityChanged(intensity: Float) {
-        if (currentMode == "less") {
-            act.detachSeekBar()
-            return
-        }
-        val adjusted = if (seekbarCenterMode) (intensity * 2f - 1f) else intensity
-        eyeParams[currentMode] = adjusted
-        scheduleRealtimePreview()
-    }
-
-    override fun getDefaultIntensity(): Float = if (seekbarCenterMode) 0.5f else 0f
-
-    private fun scheduleRealtimePreview() {
-        applyJob?.cancel()
-        applyJob = lifecycleScope.launch {
-            delay(20)
-            updateEyesPreview()
-        }
-    }
-
     private fun prepareData() {
         val bmp = viewModel.editedBitmap.value ?: return
         baseBitmap = bmp.copy(Bitmap.Config.ARGB_8888, true)
@@ -177,86 +155,94 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
             val w = bmp.width.toDouble()
             val h = bmp.height.toDouble()
 
-            val leftEyeIndices = listOf(33, 133, 159, 145, 160, 161, 246, 163, 144, 145, 153, 154, 155, 133)
-            val rightEyeIndices = listOf(362, 263, 386, 374, 387, 388, 466, 390, 373, 374, 380, 381, 382, 263)
+            val leftEyeIndices = listOf(33, 133, 159, 145, 160, 161, 246, 130)
+            val rightEyeIndices = listOf(362, 263, 386, 374, 387, 388, 466, 390)
 
-            val leftPoints = leftEyeIndices.map { Point(landmarks[it].x() * w, landmarks[it].y() * h) }
-            val rightPoints = rightEyeIndices.map { Point(landmarks[it].x() * w, landmarks[it].y() * h) }
+            leftEyeCenter = meanPoint(leftEyeIndices.map {
+                Point(landmarks[it].x() * w, landmarks[it].y() * h)
+            })
+            rightEyeCenter = meanPoint(rightEyeIndices.map {
+                Point(landmarks[it].x() * w, landmarks[it].y() * h)
+            })
 
-            leftEyeCenter = meanPoint(leftPoints)
-            rightEyeCenter = meanPoint(rightPoints)
         }
     }
 
-    private fun updateEyesPreview() {
-        lifecycleScope.launch(Dispatchers.Default) {
-            if (baseBitmap == null) return@launch
 
-            val src = baseBitmap!!.toMat()
-            val dst = src.clone()
-
-            val leftR = calculateEyeRadius(leftEyeCenter, src)
-            val rightR = calculateEyeRadius(rightEyeCenter, src)
-
-            val p = eyeParams
-
-            if (p["size"] != 0f) {
-                stretchEye(src, dst, leftEyeCenter, leftR, p["size"]!!)
-                stretchEye(src, dst, rightEyeCenter, rightR, p["size"]!!)
-            }
-            if (p["height"] != 0f) {
-                stretchEyeVertical(dst, dst, leftEyeCenter, leftR, p["height"]!!)
-                stretchEyeVertical(dst, dst, rightEyeCenter, rightR, p["height"]!!)
-            }
-            if (p["width"] != 0f) {
-                stretchEyeHorizontal(dst, dst, leftEyeCenter, leftR, p["width"]!!)
-                stretchEyeHorizontal(dst, dst, rightEyeCenter, rightR, p["width"]!!)
-            }
-            if (p["location"] != 0f) {
-                moveEye(dst, dst, leftEyeCenter, leftR, p["location"]!! * 30.0, 0.0)
-                moveEye(dst, dst, rightEyeCenter, rightR, p["location"]!! * 30.0, 0.0)
-            }
-            if (p["distance"] != 0f) {
-                val d = p["distance"]!! * 40
-                moveEye(dst, dst, leftEyeCenter, leftR, 0.0, d.toDouble())
-                moveEye(dst, dst, rightEyeCenter, rightR, 0.0, -d.toDouble())
-            }
-            if (p["corner"] != 0f) {
-                rotateEye(dst, leftEyeCenter, leftR, p["corner"]!!, false)
-                rotateEye(dst, rightEyeCenter, rightR, p["corner"]!!, true)
-            }
-
-            val bitmapOut = dst.toBitmap()
-            withContext(Dispatchers.Main) {
-                /* viewModel.setPreview(bitmapOut)*/
-                act.binding.imgPreview.setImageBitmap(bitmapOut)
-            }
-            dst.release()
-            src.release()
+    private fun scheduleRealtimePreview() {
+        applyJob?.cancel()
+        applyJob = lifecycleScope.launch(Dispatchers.Default) {
+            delay(20)
+            applyAllEffects()
         }
     }
 
-    // === Các hàm xử lý ảnh (giữ nguyên) ===
-    private fun calculateEyeRadius(center: Point, mat: Mat): Double {
-        val avgDist = listOf(
-            abs(center.x - 0), abs(center.x - mat.cols()),
-            abs(center.y - 0), abs(center.y - mat.rows())
-        ).average()
-        return avgDist * 0.15
+
+    /**
+     * Áp dụng tất cả hiệu ứng hiện tại (cho preview)
+     */
+    private fun applyAllEffects() {
+        val bmp = baseBitmap ?: return
+        val src = Mat()
+        Utils.bitmapToMat(bmp, src)
+        val result = src.clone()
+
+        val size = eyeParams["size"] ?: 0f
+        val height = eyeParams["height"] ?: 0f
+        val width = eyeParams["width"] ?: 0f
+        val loc = eyeParams["location"] ?: 0f
+        val dist = eyeParams["distance"] ?: 0f
+        val corner = eyeParams["corner"] ?: 0f
+
+        if (size != 0f) {
+            radialZoomEye(src, result, leftEyeCenter, 90.0, size)
+            radialZoomEye(src, result, rightEyeCenter, 90.0, size)
+        }
+        if (height != 0f) {
+            stretchEyeVertical(src, result, leftEyeCenter, 90.0, height)
+            stretchEyeVertical(src, result, rightEyeCenter, 90.0, height)
+        }
+        if (width != 0f) {
+            stretchEyeHorizontal(src, result, leftEyeCenter, 90.0, width)
+            stretchEyeHorizontal(src, result, rightEyeCenter, 90.0, width)
+        }
+        if (loc != 0f) {
+            moveEye(result, result, leftEyeCenter, 90.0, loc * 20.0, 0.0)
+            moveEye(result, result, rightEyeCenter, 90.0, loc * 20.0, 0.0)
+        }
+        if (dist != 0f) {
+            moveEye(result, result, leftEyeCenter, 90.0, 0.0, -dist * 20.0)
+            moveEye(result, result, rightEyeCenter, 90.0, 0.0, dist * 20.0)
+        }
+        if (corner != 0f) {
+            rotateEye(result, leftEyeCenter, 90.0, corner, false)
+            rotateEye(result, rightEyeCenter, 90.0, corner, true)
+        }
+
+        val outBmp = Bitmap.createBitmap(result.cols(), result.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(result, outBmp)
+        lifecycleScope.launch(Dispatchers.Main) {
+            act.binding.imgPreview.setImageBitmap(outBmp)
+        }
+        src.release()
+        result.release()
     }
 
-    private fun stretchEye(src: Mat, dst: Mat, c: Point, R: Double, d: Float) {
-        if (abs(d) < 0.001f) return
-        val s = d * 0.4f
+    //EYE SIZE
+    private fun radialZoomEye(src: Mat, dst: Mat, c: Point, R: Double, delta: Float) {
+        if (abs(delta) < 0.001) return
+        val k = delta * 0.12
         val rect = makeRect(src, c, R)
         val roi = Mat(src, rect)
         val warped = Mat.zeros(roi.size(), roi.type())
         for (y in 0 until roi.rows()) for (x in 0 until roi.cols()) {
-            val gx = x + rect.x; val gy = y + rect.y
-            val dx = gx - c.x; val dy = gy - c.y
+            val gx = x + rect.x;
+            val gy = y + rect.y
+            val dx = gx - c.x;
+            val dy = gy - c.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
-                val f = 1 + s * (1 - (r / R).pow(2))
+                val f = 1 + k * (1 - (r / R).pow(2))
                 val srcX = (c.x + dx / f).toInt().coerceIn(0, src.cols() - 1)
                 val srcY = (c.y + dy / f).toInt().coerceIn(0, src.rows() - 1)
                 warped.put(y, x, *src.get(srcY, srcX))
@@ -266,15 +252,18 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         roi.release(); warped.release()
     }
 
+    //HEIGHT / WIDTH
     private fun stretchEyeVertical(src: Mat, dst: Mat, c: Point, R: Double, d: Float) {
-        if (abs(d) < 0.001f) return
-        val s = d * 0.3f
+        if (abs(d) < 0.001) return
+        val s = d * 0.2
         val rect = makeRect(src, c, R)
         val roi = Mat(src, rect)
         val warped = Mat.zeros(roi.size(), roi.type())
         for (y in 0 until roi.rows()) for (x in 0 until roi.cols()) {
-            val gx = x + rect.x; val gy = y + rect.y
-            val dx = gx - c.x; val dy = gy - c.y
+            val gx = x + rect.x;
+            val gy = y + rect.y
+            val dx = gx - c.x;
+            val dy = gy - c.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
                 val fY = 1 + s * (1 - (r / R).pow(2))
@@ -287,14 +276,16 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
     }
 
     private fun stretchEyeHorizontal(src: Mat, dst: Mat, c: Point, R: Double, d: Float) {
-        if (abs(d) < 0.001f) return
-        val s = d * 0.3f
+        if (abs(d) < 0.001) return
+        val s = d * 0.2
         val rect = makeRect(src, c, R)
         val roi = Mat(src, rect)
         val warped = Mat.zeros(roi.size(), roi.type())
         for (y in 0 until roi.rows()) for (x in 0 until roi.cols()) {
-            val gx = x + rect.x; val gy = y + rect.y
-            val dx = gx - c.x; val dy = gy - c.y
+            val gx = x + rect.x;
+            val gy = y + rect.y
+            val dx = gx - c.x;
+            val dy = gy - c.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
                 val fX = 1 + s * (1 - (r / R).pow(2))
@@ -306,18 +297,21 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         roi.release(); warped.release()
     }
 
+    // LOCATION / DISTANCE
     private fun moveEye(src: Mat, dst: Mat, c: Point, R: Double, shiftY: Double, shiftX: Double) {
         val rect = makeRect(src, c, R)
         val roi = Mat(src, rect)
         val warped = Mat.zeros(roi.size(), roi.type())
         for (y in 0 until roi.rows()) for (x in 0 until roi.cols()) {
-            val gx = x + rect.x; val gy = y + rect.y
-            val dx = gx - c.x; val dy = gy - c.y
+            val gx = x + rect.x;
+            val gy = y + rect.y
+            val dx = gx - c.x;
+            val dy = gy - c.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
                 val factor = 1 - (r / R).pow(2.0)
-                val srcX = (gx - shiftX * factor).toInt().coerceIn(0, src.cols() - 1)
-                val srcY = (gy - shiftY * factor).toInt().coerceIn(0, src.rows() - 1)
+                val srcX = (gx - shiftX * 0.5 * factor).toInt().coerceIn(0, src.cols() - 1)
+                val srcY = (gy - shiftY * 0.5 * factor).toInt().coerceIn(0, src.rows() - 1)
                 warped.put(y, x, *src.get(srcY, srcX))
             } else warped.put(y, x, *roi.get(y, x))
         }
@@ -325,20 +319,27 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         roi.release(); warped.release()
     }
 
+    // CORNER
     private fun rotateEye(dst: Mat, center: Point, R: Double, delta: Float, isRight: Boolean) {
-        if (abs(delta) < 0.001f) return
-        val angle = delta * 5 * if (isRight) 1 else -1
+        if (abs(delta) < 0.001) return
+        val angle = delta * 3 * if (isRight) 1 else -1
         val rect = makeRect(dst, center, R)
         val roi = Mat(dst, rect)
+
         val rotationMat = Imgproc.getRotationMatrix2D(
-            Point(roi.width() / 2.0, roi.height() / 2.0), angle.toDouble(), 1.0
+            Point(roi.width() / 2.0, roi.height() / 2.0),
+            angle.toDouble(), 1.0
         )
+
         val rotated = Mat()
         Imgproc.warpAffine(roi, rotated, rotationMat, roi.size(), Imgproc.INTER_LINEAR)
+
+        // Blend mịn
         blendRegion(dst, rotated, rect, R)
-        roi.release(); rotated.release(); rotationMat.release()
+        roi.release(); rotated.release()
     }
 
+    // UTILITIES
     private fun makeRect(src: Mat, c: Point, R: Double): Rect {
         return Rect(
             max(0, (c.x - R).toInt()),
@@ -350,7 +351,10 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
 
     private fun blendRegion(dst: Mat, warped: Mat, rect: Rect, R: Double) {
         val mask = Mat.zeros(warped.size(), CvType.CV_8UC1)
-        Imgproc.circle(mask, Point(mask.width() / 2.0, mask.height() / 2.0), (R * 0.9).toInt(), Scalar(255.0), -1)
+        Imgproc.circle(
+            mask, Point(mask.width() / 2.0, mask.height() / 2.0),
+            (R * 0.9).toInt(), Scalar(255.0), -1
+        )
         Imgproc.GaussianBlur(mask, mask, Size(11.0, 11.0), 6.0)
         val sub = dst.submat(rect)
         warped.copyTo(sub, mask)
@@ -358,10 +362,25 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
     }
 
     private fun meanPoint(points: List<Point>): Point {
-        var sx = 0.0; var sy = 0.0
-        for (p in points) { sx += p.x; sy += p.y }
+        var sx = 0.0;
+        var sy = 0.0
+        for (p in points) {
+            sx += p.x; sy += p.y
+        }
         return Point(sx / max(1, points.size), sy / max(1, points.size))
     }
+
+    override fun onIntensityChanged(intensity: Float) {
+        if (currentMode == "less") {
+            act.detachSeekBar()
+            return
+        }
+        val adjusted = if (seekbarCenterMode) (intensity * 2f - 1f) else intensity
+        eyeParams[currentMode] = adjusted
+        scheduleRealtimePreview()
+    }
+
+    override fun getDefaultIntensity(): Float = if (seekbarCenterMode) 0.5f else 0f
 
     override fun onApply() {
         val currentBitmap = act.binding.imgPreview.drawable?.toBitmap() ?: return
@@ -385,4 +404,5 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
             }
         }
     }
+
 }

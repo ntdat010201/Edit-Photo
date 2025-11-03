@@ -38,6 +38,7 @@ import com.example.editphoto.utils.extent.listAdjustSub
 import com.example.editphoto.utils.extent.listFaceSub
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.view.BlurDrawView
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.example.editphoto.viewmodel.PhotoViewModel
 import com.google.android.flexbox.FlexDirection
@@ -109,9 +110,6 @@ class EditImageActivity : BaseActivity() {
     }
 
     private fun initView() {
-        /*
-                showImageGlide(this, originalBitmap!!, binding.imgPreview)
-        */
 
         currentFeatureType = FeatureType.ADJUST
         currentSubType = SubType.CUT
@@ -128,6 +126,7 @@ class EditImageActivity : BaseActivity() {
         viewModel.editedBitmap.observe(this) { bitmap ->
             Log.d("DAT", "observeViewModel: " + "bitmap")
             binding.imgPreview.setImageBitmap(bitmap)
+            binding.blurDrawView.setImage(bitmap)
         }
 
         viewModel.previewBitmap.observe(this) { preview ->
@@ -359,6 +358,21 @@ class EditImageActivity : BaseActivity() {
         binding.cropImageView.visibility = View.GONE
         binding.imgPreview.visibility = View.VISIBLE
     }
+
+    fun enableBlurMode() {
+        binding.blurDrawView.visibility = View.VISIBLE
+        binding.blurDrawView.mode = BlurDrawView.Mode.BLUR
+    }
+
+    fun enableEraseMode() {
+        binding.blurDrawView.mode = BlurDrawView.Mode.ERASE
+    }
+
+    fun disableBlurFeature() {
+        binding.blurDrawView.visibility = View.GONE
+        binding.blurDrawView.mode = BlurDrawView.Mode.NONE
+    }
+
 
 
     override fun onStart() {

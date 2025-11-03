@@ -1,10 +1,6 @@
 package com.example.editphoto.ui.fragments
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.*
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,11 +17,8 @@ import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlin.math.*
 
 class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
 
@@ -80,48 +73,25 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         binding.colorless.setOnClickListener {
             selectColor(binding.colorless, binding.borderColorless, COLORLESS)
         }
-        // Các màu má hồng (BGR) khớp với layout fragment_cheeks.xml
+
+
         binding.colorBlush1.setOnClickListener {
-            selectColor(
-                binding.colorBlush1,
-                binding.borderColorBlush1,
-                ColorScalar(193.0, 182.0, 255.0)
-            ) // Soft Pink
+            selectColor(binding.colorBlush1, binding.borderColorBlush1, ColorScalar(196.0, 159.0, 239.0)) // #FFE40203
         }
         binding.colorBlush2.setOnClickListener {
-            selectColor(
-                binding.colorBlush2,
-                binding.borderColorBlush2,
-                ColorScalar(122.0, 160.0, 255.0)
-            ) // Peach
+            selectColor(binding.colorBlush2, binding.borderColorBlush2, ColorScalar(165.0, 106.0, 241.0)) // #FFF64A4A
         }
         binding.colorBlush3.setOnClickListener {
-            selectColor(
-                binding.colorBlush3,
-                binding.borderColorBlush3,
-                ColorScalar(171.0, 130.0, 255.0)
-            ) // Rose
+            selectColor(binding.colorBlush3, binding.borderColorBlush3, ColorScalar(135.0, 50.0, 242.0)) // #FFCF025F
         }
         binding.colorBlush4.setOnClickListener {
-            selectColor(
-                binding.colorBlush4,
-                binding.borderColorBlush4,
-                ColorScalar(80.0, 127.0, 255.0)
-            ) // Coral
+            selectColor(binding.colorBlush4, binding.borderColorBlush4, ColorScalar(95.0, 2.0, 207.0)) // #FFF23287
         }
         binding.colorBlush5.setOnClickListener {
-            selectColor(
-                binding.colorBlush5,
-                binding.borderColorBlush5,
-                ColorScalar(172.0, 160.0, 233.0)
-            ) // Warm Rose
+            selectColor(binding.colorBlush5, binding.borderColorBlush5, ColorScalar(74.0, 74.0, 246.0)) // #FFF16AA5
         }
         binding.colorBlush6.setOnClickListener {
-            selectColor(
-                binding.colorBlush6,
-                binding.borderColorBlush6,
-                ColorScalar(63.0, 133.0, 205.0)
-            ) // Nude
+            selectColor(binding.colorBlush6, binding.borderColorBlush6, ColorScalar(3.0, 2.0, 228.0)) // #FFEF9FC4
         }
     }
 
@@ -200,202 +170,142 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
             val rightMask = rightCheekMask ?: return@launch
             val base = baseBitmap ?: return@launch
 
-            val tmp = applyBlushColorBitmap(base, leftMask, selectedColor, intensity)
-            val bitmapOut = applyBlushColorBitmap(tmp, rightMask, selectedColor, intensity)
+            val tmp = applyBlushSoftLight(base, leftMask, selectedColor, intensity)
+            val bitmapOut = applyBlushSoftLight(tmp, rightMask, selectedColor, intensity)
             withContext(Dispatchers.Main) {
                 parentActivity.binding.imgPreview.setImageBitmap(bitmapOut)
             }
         }
     }
 
+    // TẠO MASK HÌNH TRÒN TỰ ĐỘNG THEO MẶT
     private fun createCheekMaskBitmap(
         bitmap: Bitmap,
         landmarks: List<NormalizedLandmark>,
         isLeft: Boolean
     ): Bitmap {
-        val w = bitmap.width
-        val h = bitmap.height
-        val mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val w = bitmap.width.toFloat()
+        val h = bitmap.height.toFloat()
+        val mask = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(mask)
-        val path = Path()
-        val paint =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.WHITE }
-
-        //  gò má  (ước lượng dựa FaceMesh)
-        val idx = if (isLeft) listOf(234, 93, 132, 58, 172, 136, 150, 149) else listOf(454, 323, 361, 288, 397, 365, 379, 378)
-        for ((i, id) in idx.withIndex()) {
-            val x = landmarks[id].x() * w
-            val y = landmarks[id].y() * h
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
         }
-        path.close()
-        canvas.drawPath(path, paint)
-        return blurMaskAlpha(mask, radius = (h * 0.012f).toInt().coerceAtLeast(6))
+
+        // Điểm trung tâm: gò má cao + khóe miệng
+        val centerIdx1 = if (isLeft) 234 else 454  // khóe miệng
+        val centerIdx2 = if (isLeft) 205 else 425
+        val cx = (landmarks[centerIdx1].x() + landmarks[centerIdx2].x()) / 2 * w
+        val cy = (landmarks[centerIdx1].y() + landmarks[centerIdx2].y()) / 2 * h
+
+        // Tính bán kính theo chiều rộng miệng
+        val mouthLeft = Point((landmarks[61].x() * w).toInt(), (landmarks[61].y() * h).toInt())
+        val mouthRight = Point((landmarks[291].x() * w).toInt(), (landmarks[291].y() * h).toInt())
+        val mouthWidth = hypot((mouthRight.x - mouthLeft.x).toDouble(), (mouthRight.y - mouthLeft.y).toDouble())
+        val radius = (mouthWidth * 0.4).toFloat() // 22% miệng
+
+        val oval = RectF(
+            cx - radius, cy - radius * 0.9f,
+            cx + radius, cy + radius * 0.9f
+        )
+        canvas.drawOval(oval, paint)
+
+        return blurMaskAlpha(mask, radius = (radius * 0.4f).toInt().coerceAtLeast(12))
     }
 
+    // BLUR GAUSSIAN THỦ CÔNG (nhanh hơn RenderScript)
     private fun blurMaskAlpha(src: Bitmap, radius: Int): Bitmap {
         val r = radius.coerceAtLeast(1)
-        val w = src.width;
-        val h = src.height
+        val w = src.width; val h = src.height
         val tmp = src.copy(Bitmap.Config.ARGB_8888, true)
-        val tmpPixels = IntArray(w * h)
-        val outPixels = IntArray(w * h)
-        src.getPixels(tmpPixels, 0, w, 0, 0, w, h)
+        val pixels = IntArray(w * h)
+        src.getPixels(pixels, 0, w, 0, 0, w, h)
 
-        // chỉ làm mờ alpha
-        for (i in 0 until w * h) tmpPixels[i] = (tmpPixels[i] ushr 24) and 0xFF
+        // Chỉ lấy alpha
+        for (i in pixels.indices) pixels[i] = (pixels[i] ushr 24)
 
+        val out = IntArray(w * h)
+        // Horizontal
         for (y in 0 until h) {
             var sum = 0
             val yi = y * w
-            for (x in 0..r) if (x < w) sum += tmpPixels[yi + x]
+            for (x in 0..r) if (x < w) sum += pixels[yi + x]
             for (x in 0 until w) {
-                val left = x - r - 1
-                val right = minOf(w - 1, x + r)
-                if (left >= 0) sum -= tmpPixels[yi + left]
-                sum += tmpPixels[yi + right]
-                outPixels[yi + x] = sum / (r * 2 + 1)
+                val left = (x - r - 1).coerceAtLeast(0)
+                val right = (x + r).coerceAtMost(w - 1)
+                if (left >= 0) sum -= pixels[yi + left]
+                sum += pixels[yi + right]
+                out[yi + x] = sum / (r * 2 + 1)
             }
         }
-
-        val vertPixels = IntArray(w * h)
+        // Vertical
+        val vert = IntArray(w * h)
         for (x in 0 until w) {
             var sum = 0
-            for (y in 0..r) if (y < h) sum += outPixels[y * w + x]
+            for (y in 0..r) if (y < h) sum += out[y * w + x]
             for (y in 0 until h) {
-                val top = y - r - 1
-                val bottom = minOf(h - 1, y + r)
-                if (top >= 0) sum -= outPixels[top * w + x]
-                sum += outPixels[bottom * w + x]
-                vertPixels[y * w + x] = sum / (r * 2 + 1)
+                val top = (y - r - 1).coerceAtLeast(0)
+                val bot = (y + r).coerceAtMost(h - 1)
+                if (top >= 0) sum -= out[top * w + x]
+                sum += out[bot * w + x]
+                vert[y * w + x] = sum / (r * 2 + 1)
             }
         }
-
-        for (i in 0 until w * h) {
-            val a = vertPixels[i].coerceIn(0, 255)
-            outPixels[i] = (a shl 24) or 0xFFFFFF
+        // Gán lại alpha
+        for (i in pixels.indices) {
+            val a = vert[i].coerceIn(0, 255)
+            pixels[i] = (a shl 24) or 0x00FFFFFF
         }
-        tmp.setPixels(outPixels, 0, w, 0, 0, w, h)
+        tmp.setPixels(pixels, 0, w, 0, 0, w, h)
         return tmp
     }
 
-    private fun applyBlushColorBitmap(
+    // BLEND SOFT LIGHT (GIỐNG APP LỚN)
+    private fun applyBlushSoftLight(
         base: Bitmap,
         mask: Bitmap,
         colorBGR: ColorScalar,
         intensity: Float
     ): Bitmap {
-        val w = base.width;
-        val h = base.height
+        val w = base.width; val h = base.height
         val out = base.copy(Bitmap.Config.ARGB_8888, true)
         val basePixels = IntArray(w * h)
         val maskPixels = IntArray(w * h)
         out.getPixels(basePixels, 0, w, 0, 0, w, h)
         mask.getPixels(maskPixels, 0, w, 0, 0, w, h)
 
-        val targetR = colorBGR.red.toInt().coerceIn(0, 255)
-        val targetG = colorBGR.green.toInt().coerceIn(0, 255)
-        val targetBlue = colorBGR.blue.toInt().coerceIn(0, 255)
+        val cr = colorBGR.red.toInt().coerceIn(0, 255)
+        val cg = colorBGR.green.toInt().coerceIn(0, 255)
+        val cb = colorBGR.blue.toInt().coerceIn(0, 255)
 
-        val (targetL, targetA, targetBLab) = rgbToLab(targetR, targetG, targetBlue)
-        val chromaBoost = 1.25f // má hồng nhẹ hơn môi
-        val boostedA = targetA * chromaBoost
-        val boostedB = targetBLab * chromaBoost
-        val finalL = targetL.coerceIn(45.0, 90.0)
-
-        val (cleanR, cleanG, cleanB) = labToRgb(finalL, boostedA, boostedB)
-        val keepTexture = 0.55f // giữ texture da nhiều hơn
-        val applyStrength = (intensity * 0.8f).coerceIn(0f, 1f)
+        fun softLight(overlay: Int, base: Int): Int {
+            val o = overlay / 255f
+            val b = base / 255f
+            val result = if (o <= 0.5f) {
+                b - (1f - 2f * o) * b * (1f - b)
+            } else {
+                b + (2f * o - 1f) * (sqrt(b) - b)
+            }
+            return (result * 255).toInt().coerceIn(0, 255)
+        }
 
         for (i in 0 until w * h) {
-            val alphaMask = (maskPixels[i] ushr 24) / 255.0f
-            if (alphaMask == 0f) continue
+            val alpha = (maskPixels[i] ushr 24) / 255f * intensity.coerceIn(0f, 1f)
+            if (alpha < 0.01f) continue
 
-            val pixel = basePixels[i]
-            val r = (pixel shr 16) and 0xFF
-            val g = (pixel shr 8) and 0xFF
-            val b = pixel and 0xFF
+            val r = (basePixels[i] shr 16) and 0xFF
+            val g = (basePixels[i] shr 8) and 0xFF
+            val b = basePixels[i] and 0xFF
 
-            val mixedR = (cleanR * (1 - keepTexture) + r * keepTexture).toInt().coerceIn(0, 255)
-            val mixedG = (cleanG * (1 - keepTexture) + g * keepTexture).toInt().coerceIn(0, 255)
-            val mixedB = (cleanB * (1 - keepTexture) + b * keepTexture).toInt().coerceIn(0, 255)
+            val finalR = ((1 - alpha) * r + alpha * softLight(cr, r)).toInt()
+            val finalG = ((1 - alpha) * g + alpha * softLight(cg, g)).toInt()
+            val finalB = ((1 - alpha) * b + alpha * softLight(cb, b)).toInt()
 
-            val finalR = (mixedR * applyStrength + r * (1 - applyStrength)).toInt()
-            val finalG = (mixedG * applyStrength + g * (1 - applyStrength)).toInt()
-            val finalB = (mixedB * applyStrength + b * (1 - applyStrength)).toInt()
-
-            val outR = (finalR * alphaMask + r * (1 - alphaMask)).toInt()
-            val outG = (finalG * alphaMask + g * (1 - alphaMask)).toInt()
-            val outB = (finalB * alphaMask + b * (1 - alphaMask)).toInt()
-
-            basePixels[i] = (0xFF shl 24) or (outR shl 16) or (outG shl 8) or outB
+            basePixels[i] = (0xFF shl 24) or (finalR shl 16) or (finalG shl 8) or finalB
         }
-
         out.setPixels(basePixels, 0, w, 0, 0, w, h)
         return out
-    }
-
-    private fun rgbToLab(r: Int, g: Int, b: Int): Triple<Double, Double, Double> {
-        fun srgbToLinear(c: Double): Double =
-            if (c <= 0.04045) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
-
-        val R = srgbToLinear(r / 255.0)
-        val G = srgbToLinear(g / 255.0)
-        val B = srgbToLinear(b / 255.0)
-
-        val X = R * 0.4124 + G * 0.3576 + B * 0.1805
-        val Y = R * 0.2126 + G * 0.7152 + B * 0.0722
-        val Z = R * 0.0193 + G * 0.1192 + B * 0.9505
-
-        val Xn = 0.95047;
-        val Yn = 1.0;
-        val Zn = 1.08883
-        var x = X / Xn;
-        var y = Y / Yn;
-        var z = Z / Zn
-
-        fun f(t: Double): Double =
-            if (t > 0.008856) Math.cbrt(t) else (7.787 * t + 16.0 / 116.0)
-
-        val fx = f(x);
-        val fy = f(y);
-        val fz = f(z)
-        val L = 116.0 * fy - 16.0
-        val a = 500.0 * (fx - fy)
-        val bLab = 200.0 * (fy - fz)
-        return Triple(L, a, bLab)
-    }
-
-    private fun labToRgb(L: Double, a: Double, b: Double): Triple<Int, Int, Int> {
-        val fy = (L + 16.0) / 116.0
-        val fx = a / 500.0 + fy
-        val fz = fy - b / 200.0
-
-        fun fInv(t: Double): Double {
-            val t3 = t * t * t
-            return if (t3 > 0.008856) t3 else (t - 16.0 / 116.0) / 7.787
-        }
-
-        val Xn = 0.95047;
-        val Yn = 1.0;
-        val Zn = 1.08883
-        val X = Xn * fInv(fx)
-        val Y = Yn * fInv(fy)
-        val Z = Zn * fInv(fz)
-
-        var R = 3.2406 * X - 1.5372 * Y - 0.4986 * Z
-        var G = -0.9689 * X + 1.8758 * Y + 0.0415 * Z
-        var B = 0.0557 * X - 0.2040 * Y + 1.0570 * Z
-
-        fun linearToSrgb(c: Double): Double =
-            if (c <= 0.0031308) 12.92 * c else 1.055 * Math.pow(c, 1.0 / 2.4) - 0.055
-
-        R = linearToSrgb(R); G = linearToSrgb(G); B = linearToSrgb(B)
-        return Triple(
-            (R * 255).toInt().coerceIn(0, 255),
-            (G * 255).toInt().coerceIn(0, 255),
-            (B * 255).toInt().coerceIn(0, 255)
-        )
     }
 
     override fun onApply() {
