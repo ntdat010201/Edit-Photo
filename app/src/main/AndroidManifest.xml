@@ -26,6 +26,9 @@
         android:theme="@style/Theme.EditPhoto"
         tools:targetApi="31">
         <activity
+            android:name=".ui.activities.PhotoViewerActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.activities.HistoryActivity"
             android:exported="false" />
         <activity

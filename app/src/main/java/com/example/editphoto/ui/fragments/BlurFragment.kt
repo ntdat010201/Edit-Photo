@@ -5,15 +5,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentBlurBinding
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.view.BlurMaskView
 
 class BlurFragment : Fragment(), OnApplyListener {
     private lateinit var binding: FragmentBlurBinding
     private lateinit var parentActivity: EditImageActivity
-    private var baseBitmap: Bitmap? = null
+    private var beforeEditBitmap: Bitmap? = null
+
+    private var blurMaskView: BlurMaskView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -28,46 +32,66 @@ class BlurFragment : Fragment(), OnApplyListener {
         parentActivity = requireActivity() as EditImageActivity
 
         initData()
+        initView()
         initListener()
     }
 
     private fun initData() {
-
-        baseBitmap = parentActivity.viewModel.previewBitmap.value
+        beforeEditBitmap = parentActivity.viewModel.previewBitmap.value
             ?: parentActivity.viewModel.editedBitmap.value
                     ?: parentActivity.viewModel.originalBitmap.value
 
-        baseBitmap?.let {
-            parentActivity.binding.blurDrawView.setImage(it)
-        }
 
-        parentActivity.enableBlurMode()
+    }
+
+    private fun initView() {
+
+        blurMaskView = BlurMaskView(requireContext()).apply {
+            setEraseMode(false)
+            beforeEditBitmap?.let {
+                attachTo(
+                    parentActivity.binding.imgPreview,
+                    it,
+                    blurRadius = 12
+                ) { out ->
+                    parentActivity.binding.imgPreview.setImageBitmap(out)
+                }
+            }
+        }
+        // UI highlight mặc định
+        binding.constraintBlur.alpha = 1f
+        binding.constraintErase.alpha = 0.6f
+
+
     }
 
     private fun initListener() {
         binding.constraintBlur.setOnClickListener {
-            parentActivity.enableBlurMode()
+            blurMaskView?.setEraseMode(false)
+            binding.constraintBlur.alpha = 1f
+            binding.constraintErase.alpha = 0.6f
         }
 
         binding.constraintErase.setOnClickListener {
-            parentActivity.enableEraseMode()
+            blurMaskView?.setEraseMode(true)
+            binding.constraintBlur.alpha = 0.6f
+            binding.constraintErase.alpha = 1f
         }
     }
 
     override fun onApply() {
-        val blurredBitmap = parentActivity.binding.blurDrawView.getFinalBitmap()
-        if (blurredBitmap != null) {
-            parentActivity.viewModel.setPreview(blurredBitmap)
-            parentActivity.viewModel.commitPreview()
-            parentActivity.binding.imgPreview.setImageBitmap(blurredBitmap)
-        }
+        val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
+        parentActivity.viewModel.setPreview(currentBitmap)
+        parentActivity.viewModel.commitPreview()
 
-        // Ẩn blur view sau khi apply
-        parentActivity.disableBlurFeature()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        parentActivity.disableBlurFeature()
+        parentActivity.binding.imgPreview.setImageBitmap(beforeEditBitmap)
+        blurMaskView?.detach()
+        blurMaskView = null
     }
+
+
 }
