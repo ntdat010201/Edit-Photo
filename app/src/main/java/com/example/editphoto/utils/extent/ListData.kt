@@ -26,3 +26,9 @@ val listAdjustSub = listOf(
     SubModel("Lật", SubType.FLIP),
     SubModel("Xoay", SubType.TURN),
 )
+
+val listStickerSub = listOf(
+    SubModel("Icon", SubType.ICON),
+    SubModel("Sticker", SubType.STICKER),
+    SubModel("Text", SubType.TEXT),
+)

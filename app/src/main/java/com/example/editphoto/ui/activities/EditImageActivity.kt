@@ -33,11 +33,15 @@ import com.example.editphoto.ui.fragments.CutFragment
 import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.ui.fragments.EyesFragment
 import com.example.editphoto.ui.fragments.FlipFragment
+import com.example.editphoto.ui.fragments.IconFragment
 import com.example.editphoto.ui.fragments.LipsFragment
+import com.example.editphoto.ui.fragments.StickerFragment
+import com.example.editphoto.ui.fragments.TextFragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.utils.extent.listAdjust
 import com.example.editphoto.utils.extent.listAdjustSub
 import com.example.editphoto.utils.extent.listFaceSub
+import com.example.editphoto.utils.extent.listStickerSub
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.utils.inter.UnsavedChangesListener
@@ -172,10 +176,10 @@ class EditImageActivity : BaseActivity() {
                         }
 
                         FeatureType.STICKER -> {
-                            showSubOptionsFace(listFaceSub)
-                            currentSubType = SubType.LIPS
+                            showSubOptionsSticker(listStickerSub)
+                            currentSubType = SubType.ICON
                             supportFragmentManager.beginTransaction()
-                                .replace(R.id.editContainer, LipsFragment())
+                                .replace(R.id.editContainer, IconFragment())
                                 .commit()
                             binding.editContainer.visibility = View.VISIBLE
                         }
@@ -400,6 +404,79 @@ class EditImageActivity : BaseActivity() {
             }
         }
 
+    }
+
+    private fun showSubOptionsSticker(list: List<SubModel>) {
+        val subAdapter = SubOptionsAdapter(list)
+        binding.rvSubOptions.apply {
+            if (list.size <= 5) {
+                layoutManager = FlexboxLayoutManager(context).apply {
+                    flexDirection = FlexDirection.ROW
+                    justifyContent = JustifyContent.SPACE_BETWEEN
+                }
+            } else {
+                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                LinearSnapHelper().attachToRecyclerView(this)
+            }
+            adapter = subAdapter
+        }
+
+        // Ensure adapter highlights the current subtype initially
+        currentSubType?.let { subType ->
+            val initialIndex = list.indexOfFirst { it.type == subType }
+            if (initialIndex >= 0) {
+                subAdapter.selectedPosition = initialIndex
+                subAdapter.notifyDataSetChanged()
+            }
+        }
+
+        subAdapter.onItemClick = { item ->
+            if (currentSubType == item.type) {
+                // no-op when clicking the already selected option
+            } else {
+                val proceedReplace: (Fragment) -> Unit = { frag ->
+                    currentSubType = item.type
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.editContainer, frag)
+                        .commit()
+                    binding.editContainer.visibility = View.VISIBLE
+                }
+
+                val targetFragment = when (item.type) {
+                    SubType.ICON -> IconFragment()
+                    SubType.STICKER -> StickerFragment()
+                    SubType.TEXT -> TextFragment()
+                    else -> null
+                }
+
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
+                if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
+                    UnsavedChangesDialogFragment.show(
+                        fm = supportFragmentManager,
+                        onSave = {
+                            (currentFragment as? OnApplyListener)?.onApply()
+                            targetFragment?.let { proceedReplace(it) }
+                        },
+                        onDiscard = {
+                            currentFragment.revertUnsavedChanges()
+                            targetFragment?.let { proceedReplace(it) }
+                        },
+                        onCancel = {
+                            // Revert visual selection to the previously selected subtype
+                            val previousIndex = currentSubType?.let { prev ->
+                                list.indexOfFirst { it.type == prev }
+                            } ?: -1
+                            if (previousIndex >= 0) {
+                                subAdapter.selectedPosition = previousIndex
+                                subAdapter.notifyDataSetChanged()
+                            }
+                        }
+                    )
+                } else {
+                    targetFragment?.let { proceedReplace(it) }
+                }
+            }
+        }
     }
 
     fun enableCropMode() {

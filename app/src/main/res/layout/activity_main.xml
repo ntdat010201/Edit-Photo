@@ -161,7 +161,7 @@
                 android:id="@+id/tv_edit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Edit"
+                android:text="History"
                 android:textColor="#63626E"
                 android:textSize="20sp"
                 android:textStyle="bold"
