@@ -77,7 +77,8 @@ dependencies {
 
     //flexbox
     implementation ("com.google.android.flexbox:flexbox:3.0.0")
-
+    //photoView
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
     //RoomDatabase
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

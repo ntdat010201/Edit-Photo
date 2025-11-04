@@ -1,5 +1,6 @@
 package com.example.editphoto.ui.activities
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
@@ -42,6 +43,11 @@ class HistoryActivity : BaseActivity() {
         }
         adapter.onDeleteClick = { photo ->
             photoViewModel.deletePhoto(photo)
+        }
+        adapter.onItemClick = { item ->
+            var intent = Intent(this, PhotoViewerActivity::class.java)
+            intent.putExtra("Uri_Item", item.uri)
+            startActivity(intent)
         }
 
     }

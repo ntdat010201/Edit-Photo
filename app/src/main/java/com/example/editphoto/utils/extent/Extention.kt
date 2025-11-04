@@ -16,7 +16,6 @@ import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
 
-
 /** Chuyển Bitmap → Mat */
 fun Bitmap.toMat(): Mat {
     val mat = Mat()
@@ -47,7 +46,6 @@ fun Mat.blendWith(
     blended.copyTo(this, mask)
     return this
 }
-
 
 
 fun Fragment.handlePhysicalBackPress(action: (act: EditImageActivity) -> Unit) {
@@ -83,13 +81,24 @@ fun showImageGlide(context: Context, uri: Uri, view: ImageView) {
         .into(view)
 }
 
-fun showImageGlide(context: Context, bitmap: Bitmap, view: ImageView) {
-    Glide.with(context)
-        .load(bitmap)
-        .placeholder(R.drawable.ic_gallery)
-        .error(R.drawable.img_view_gallery)
-        .into(view)
+fun updateImagePreserveZoom(newBitmap: Bitmap, view : ImageView) {
+    val drawable = view.drawable
+
+    if (drawable != null && drawable is android.graphics.drawable.BitmapDrawable) {
+        val oldBitmap = drawable.bitmap
+        if (oldBitmap.width == newBitmap.width && oldBitmap.height == newBitmap.height) {
+            val canvas = android.graphics.Canvas(oldBitmap)
+            canvas.drawBitmap(newBitmap, 0f, 0f, null)
+            view.invalidate()
+        } else {
+            view.setImageBitmap(newBitmap)
+        }
+    } else {
+        view.setImageBitmap(newBitmap)
+    }
 }
+
+
 
 
 

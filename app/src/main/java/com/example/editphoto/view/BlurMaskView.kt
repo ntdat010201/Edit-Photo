@@ -27,7 +27,8 @@ class BlurMaskView @JvmOverloads constructor(
     private var brushSizePx: Float = 60f
     private var brushSoftness: Float = 0.5f // 0..1, 1 = very soft
     private var isEraseMode: Boolean = false
-    private var maxBlurRadius: Int = 24 // map intensity 0..1 -> 0..24
+    private var maxBlurRadius: Int = 24 // bán kính blur tối đa khi khởi tạo
+    private var blurIntensity: Float = 0.5f // 0..1, trộn sức mạnh blur với mask
 
     private val drawPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -55,7 +56,10 @@ class BlurMaskView @JvmOverloads constructor(
     private var lastY = -1f
 
     private var targetImageView: ImageView? = null
-    private var previewCallback: ((Bitmap) -> Unit)? = null
+
+    var previewCallback: ((Bitmap) -> Unit)? = null
+    var onAppliedChange: ((Boolean) -> Unit)? = null
+
 
     fun setBrush(sizePx: Float, softness: Float) {
         brushSizePx = sizePx
@@ -70,12 +74,19 @@ class BlurMaskView @JvmOverloads constructor(
 
     /**
      * Cập nhật độ mờ theo intensity (0f..1f).
-     * Ánh xạ intensity -> bán kính blur, sau đó re-composite để xem trước.
+     * Tối ưu: KHÔNG re-blur mỗi lần kéo SeekBar. Chỉ điều chỉnh mức trộn.
+     * Blur bitmap được tính một lần khi attach với bán kính cung cấp (hoặc tối đa).
      */
     fun setBlurIntensity(intensity: Float) {
+        blurIntensity = intensity.coerceIn(0f, 1f)
+        compositeAndCallback()
+    }
+
+    /**
+     * Đổi bán kính blur (tính lại ảnh mờ một lần), rồi cập nhật preview.
+     */
+    fun setBlurRadius(radius: Int) {
         val base = baseBitmap ?: return
-        val clamped = intensity.coerceIn(0f, 1f)
-        val radius = (clamped * maxBlurRadius).toInt()
         blurredBitmap = if (radius <= 0) {
             base.copy(Bitmap.Config.ARGB_8888, true)
         } else {
@@ -83,6 +94,14 @@ class BlurMaskView @JvmOverloads constructor(
         }
         compositeAndCallback()
     }
+
+    private var hasDrawn = false
+        set(value) {
+            if (field != value && value) {
+                field = true
+                onAppliedChange?.invoke(true)
+            }
+        }
 
     @SuppressLint("ClickableViewAccessibility")
     fun attachTo(
@@ -95,6 +114,7 @@ class BlurMaskView @JvmOverloads constructor(
         previewCallback = onCompositeUpdated
 
         baseBitmap = base
+        // Tính sẵn ảnh mờ một lần. Cường độ sẽ trộn qua blurIntensity.
         blurredBitmap = makeBlurred(base, radius = blurRadius)
         maskBitmap = Bitmap.createBitmap(base.width, base.height, Bitmap.Config.ARGB_8888)
         maskCanvas = Canvas(maskBitmap!!)
@@ -106,6 +126,10 @@ class BlurMaskView @JvmOverloads constructor(
             val pt = mapTouchToBitmap(event.x, event.y, imageView, b)
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    if (!hasDrawn) {
+                        hasDrawn = true  // Bắn 1 lần duy nhất
+                    }
+
                     path.reset()
                     path.moveTo(pt.first, pt.second)
                     lastX = pt.first
@@ -134,6 +158,8 @@ class BlurMaskView @JvmOverloads constructor(
             true
         }
     }
+
+
 
     fun detach() {
         targetImageView?.setOnTouchListener(null)
@@ -301,9 +327,26 @@ class BlurMaskView @JvmOverloads constructor(
             if (ma == 0) {
                 continue
             } else if (ma == 255) {
-                basePix[i] = blurPix[i]
+                // Khi intensity < 1, trộn có kiểm soát thay vì thay thế toàn phần
+                if (blurIntensity >= 0.999f) {
+                    basePix[i] = blurPix[i]
+                } else {
+                    val a = (255f * blurIntensity).toInt()
+                    val br = blurPix[i] shr 16 and 0xFF
+                    val bg = blurPix[i] shr 8 and 0xFF
+                    val bb = blurPix[i] and 0xFF
+                    val rr = basePix[i] shr 16 and 0xFF
+                    val rg = basePix[i] shr 8 and 0xFF
+                    val rb = basePix[i] and 0xFF
+
+                    val nr = (rr * (255 - a) + br * a) / 255
+                    val ng = (rg * (255 - a) + bg * a) / 255
+                    val nb = (rb * (255 - a) + bb * a) / 255
+                    basePix[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
             } else {
-                val a = ma
+                // scale alpha theo intensity để giảm sức mạnh blur
+                val a = ((ma * blurIntensity).toInt()).coerceIn(0, 255)
                 val br = blurPix[i] shr 16 and 0xFF
                 val bg = blurPix[i] shr 8 and 0xFF
                 val bb = blurPix[i] and 0xFF

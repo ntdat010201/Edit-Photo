@@ -9,13 +9,16 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentBlurBinding
 import com.example.editphoto.ui.activities.EditImageActivity
+import com.example.editphoto.utils.extent.updateImagePreserveZoom
 import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.view.BlurMaskView
 
-class BlurFragment : Fragment(), OnApplyListener {
+class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
     private lateinit var binding: FragmentBlurBinding
     private lateinit var parentActivity: EditImageActivity
     private var beforeEditBitmap: Bitmap? = null
+    internal var hasApplied = false
 
     private var blurMaskView: BlurMaskView? = null
 
@@ -23,7 +26,7 @@ class BlurFragment : Fragment(), OnApplyListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentBlurBinding.inflate(inflater, container, false)
+        binding = FragmentBlurBinding.inflate(layoutInflater)
         return binding.root
     }
 
@@ -41,28 +44,32 @@ class BlurFragment : Fragment(), OnApplyListener {
             ?: parentActivity.viewModel.editedBitmap.value
                     ?: parentActivity.viewModel.originalBitmap.value
 
-
-    }
-
-    private fun initView() {
-
         blurMaskView = BlurMaskView(requireContext()).apply {
             setEraseMode(false)
             beforeEditBitmap?.let {
                 attachTo(
                     parentActivity.binding.imgPreview,
                     it,
-                    blurRadius = 12
+                    blurRadius = 80
                 ) { out ->
+
                     parentActivity.binding.imgPreview.setImageBitmap(out)
                 }
             }
         }
-        // UI highlight mặc định
-        binding.constraintBlur.alpha = 1f
-        binding.constraintErase.alpha = 0.6f
 
+        blurMaskView?.onAppliedChange = { applied ->
+            if (applied) {
+                hasApplied = applied
+            }
+        }
 
+        view?.post {
+            parentActivity.attachSeekBar(this)
+        }
+    }
+
+    private fun initView() {
     }
 
     private fun initListener() {
@@ -79,19 +86,43 @@ class BlurFragment : Fragment(), OnApplyListener {
         }
     }
 
+
+    internal fun  resetBlurToOriginal(){
+        beforeEditBitmap?.let {
+            parentActivity.viewModel.setPreview(null)
+            parentActivity.viewModel.updateBitmap(it)
+        }
+    }
+
     override fun onApply() {
         val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
         parentActivity.viewModel.setPreview(currentBitmap)
         parentActivity.viewModel.commitPreview()
+        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+        hasApplied = true
 
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        parentActivity.binding.imgPreview.setImageBitmap(beforeEditBitmap)
         blurMaskView?.detach()
         blurMaskView = null
+        parentActivity.detachSeekBar()
+        if (!hasApplied) {
+            beforeEditBitmap.let {
+                parentActivity.binding.imgPreview.setImageBitmap(it)
+                parentActivity.viewModel.setPreview(null)
+            }
+        }
     }
+
+    // Nhận giá trị cường độ từ SeekBar và cập nhật độ mờ
+    override fun onIntensityChanged(intensity: Float) {
+        blurMaskView?.setBlurIntensity(intensity)
+    }
+
+    // Mặc định đặt SeekBar ở giữa
+    override fun getDefaultIntensity(): Float = 0.5f
 
 
 }
