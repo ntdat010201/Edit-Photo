@@ -81,22 +81,7 @@ fun showImageGlide(context: Context, uri: Uri, view: ImageView) {
         .into(view)
 }
 
-fun updateImagePreserveZoom(newBitmap: Bitmap, view : ImageView) {
-    val drawable = view.drawable
 
-    if (drawable != null && drawable is android.graphics.drawable.BitmapDrawable) {
-        val oldBitmap = drawable.bitmap
-        if (oldBitmap.width == newBitmap.width && oldBitmap.height == newBitmap.height) {
-            val canvas = android.graphics.Canvas(oldBitmap)
-            canvas.drawBitmap(newBitmap, 0f, 0f, null)
-            view.invalidate()
-        } else {
-            view.setImageBitmap(newBitmap)
-        }
-    } else {
-        view.setImageBitmap(newBitmap)
-    }
-}
 
 
 

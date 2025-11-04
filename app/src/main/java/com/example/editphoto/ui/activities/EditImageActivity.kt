@@ -32,12 +32,15 @@ import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.ui.fragments.EyesFragment
 import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.utils.extent.listAdjust
 import com.example.editphoto.utils.extent.listAdjustSub
 import com.example.editphoto.utils.extent.listFaceSub
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.example.editphoto.viewmodel.PhotoViewModel
 import com.google.android.flexbox.FlexDirection
@@ -145,36 +148,59 @@ class EditImageActivity : BaseActivity() {
             if (currentFeatureType == item.type) {
                 //
             } else {
-                currentFeatureType = item.type
-                currentSubType = null
+                val proceedFeatureSwitch: (FeatureType) -> Unit = { newType ->
+                    currentFeatureType = newType
+                    currentSubType = null
 
-                when (item.type) {
-                    FeatureType.ADJUST -> {
-                        showSubOptionsAdjust(listAdjustSub)
-                        currentSubType = SubType.CUT
-                        supportFragmentManager.beginTransaction()
-                            .replace(R.id.editContainer, CutFragment())
-                            .commit()
-                        binding.editContainer.visibility = View.VISIBLE
-                    }
+                    when (newType) {
+                        FeatureType.ADJUST -> {
+                            showSubOptionsAdjust(listAdjustSub)
+                            currentSubType = SubType.CUT
+                            supportFragmentManager.beginTransaction()
+                                .replace(R.id.editContainer, CutFragment())
+                                .commit()
+                            binding.editContainer.visibility = View.VISIBLE
+                        }
 
-                    FeatureType.FACE -> {
-                        showSubOptionsFace(listFaceSub)
-                        currentSubType = SubType.LIPS
-                        supportFragmentManager.beginTransaction()
-                            .replace(R.id.editContainer, LipsFragment())
-                            .commit()
-                        binding.editContainer.visibility = View.VISIBLE
-                    }
+                        FeatureType.FACE -> {
+                            showSubOptionsFace(listFaceSub)
+                            currentSubType = SubType.LIPS
+                            supportFragmentManager.beginTransaction()
+                                .replace(R.id.editContainer, LipsFragment())
+                                .commit()
+                            binding.editContainer.visibility = View.VISIBLE
+                        }
 
-                    FeatureType.STICKER -> {
-                        showSubOptionsFace(listFaceSub)
-                        currentSubType = SubType.LIPS
-                        supportFragmentManager.beginTransaction()
-                            .replace(R.id.editContainer, LipsFragment())
-                            .commit()
-                        binding.editContainer.visibility = View.VISIBLE
+                        FeatureType.STICKER -> {
+                            showSubOptionsFace(listFaceSub)
+                            currentSubType = SubType.LIPS
+                            supportFragmentManager.beginTransaction()
+                                .replace(R.id.editContainer, LipsFragment())
+                                .commit()
+                            binding.editContainer.visibility = View.VISIBLE
+                        }
                     }
+                }
+
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
+                if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Lưu chỉnh sửa?")
+                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
+                        .setPositiveButton("Lưu") { _, _ ->
+                            (currentFragment as? OnApplyListener)?.onApply()
+                            proceedFeatureSwitch(item.type)
+                        }
+                        .setNegativeButton("Không") { _, _ ->
+                            currentFragment.revertUnsavedChanges()
+                            proceedFeatureSwitch(item.type)
+                        }
+                        .setNeutralButton("Hủy") { _, _ ->
+                            // do nothing
+                        }
+                        .show()
+                } else {
+                    proceedFeatureSwitch(item.type)
                 }
             }
         }
@@ -278,20 +304,40 @@ class EditImageActivity : BaseActivity() {
             if (currentSubType == item.type) {
                 //
             } else {
-                currentSubType = item.type
+                val proceedReplace: (Fragment) -> Unit = { frag ->
+                    currentSubType = item.type
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.editContainer, frag)
+                        .commit()
+                    binding.editContainer.visibility = View.VISIBLE
+                }
 
-                val fragment = when (item.type) {
+                val targetFragment = when (item.type) {
                     SubType.CUT -> CutFragment()
                     SubType.FLIP -> FlipFragment()
                     SubType.TURN -> TurnFragment()
                     else -> null
                 }
 
-                fragment?.let {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.editContainer, it)
-                        .commit()
-                    binding.editContainer.visibility = View.VISIBLE
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
+                if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Lưu chỉnh sửa?")
+                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
+                        .setPositiveButton("Lưu") { _, _ ->
+                            (currentFragment as? OnApplyListener)?.onApply()
+                            targetFragment?.let { proceedReplace(it) }
+                        }
+                        .setNegativeButton("Không") { _, _ ->
+                            currentFragment.revertUnsavedChanges()
+                            targetFragment?.let { proceedReplace(it) }
+                        }
+                        .setNeutralButton("Hủy") { _, _ ->
+                            // do nothing
+                        }
+                        .show()
+                } else {
+                    targetFragment?.let { proceedReplace(it) }
                 }
             }
         }
@@ -317,9 +363,15 @@ class EditImageActivity : BaseActivity() {
             if (currentSubType == item.type) {
                 //
             } else {
-                currentSubType = item.type
+                val proceedReplace: (Fragment) -> Unit = { frag ->
+                    currentSubType = item.type
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.editContainer, frag)
+                        .commit()
+                    binding.editContainer.visibility = View.VISIBLE
+                }
 
-                val fragment = when (item.type) {
+                val targetFragment = when (item.type) {
                     SubType.LIPS -> LipsFragment()
                     SubType.EYES -> EyesFragment()
                     SubType.CHEEKS -> CheeksFragment()
@@ -328,11 +380,25 @@ class EditImageActivity : BaseActivity() {
                     else -> null
                 }
 
-                fragment?.let {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.editContainer, it)
-                        .commit()
-                    binding.editContainer.visibility = View.VISIBLE
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
+                if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Lưu chỉnh sửa?")
+                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
+                        .setPositiveButton("Lưu") { _, _ ->
+                            (currentFragment as? OnApplyListener)?.onApply()
+                            targetFragment?.let { proceedReplace(it) }
+                        }
+                        .setNegativeButton("Không") { _, _ ->
+                            currentFragment.revertUnsavedChanges()
+                            targetFragment?.let { proceedReplace(it) }
+                        }
+                        .setNeutralButton("Hủy") { _, _ ->
+                            // do nothing
+                        }
+                        .show()
+                } else {
+                    targetFragment?.let { proceedReplace(it) }
                 }
             }
         }

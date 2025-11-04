@@ -13,6 +13,7 @@ import com.example.editphoto.databinding.FragmentEyesBinding
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
+class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChangesListener {
 
     private lateinit var binding: FragmentEyesBinding
     private lateinit var viewModel: EditImageViewModel
@@ -60,6 +61,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
     )
 
     private var applyJob: Job? = null
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -139,6 +141,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         eyeParams.replaceAll { _, _ -> 0f }
         baseBitmap = null
         prepareData()
+        isDirty = false
     }
 
     private fun prepareData() {
@@ -377,6 +380,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         }
         val adjusted = if (seekbarCenterMode) (intensity * 2f - 1f) else intensity
         eyeParams[currentMode] = adjusted
+        isDirty = (currentMode != "less") && eyeParams.values.any { it != 0f }
         scheduleRealtimePreview()
     }
 
@@ -390,6 +394,16 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener {
         act.binding.imgPreview.setImageBitmap(currentBitmap)
 
         hasApplied = true
+        isDirty = false
+    }
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            resetEyesToOriginal()
+        }
     }
 
     override fun onDestroyView() {

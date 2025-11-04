@@ -15,6 +15,7 @@ import com.example.editphoto.utils.extent.toBitmap
 import com.example.editphoto.utils.extent.toMat
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +36,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener {
+class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedChangesListener {
 
     private lateinit var binding: FragmentEyebrowBinding
     private lateinit var viewModel: EditImageViewModel
@@ -67,6 +68,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener {
     private var applyJob: Job? = null
     private var selectedOptionView: ImageView? = null
     private var selectedBorderView: ImageView? = null
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -148,6 +150,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener {
         browParams.replaceAll { _, _ -> 0f }
         baseBitmap = null
         prepareData()
+        isDirty = false
     }
 
     override fun onIntensityChanged(intensity: Float) {
@@ -157,6 +160,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener {
         }
         val adjusted = if (seekbarCenterMode) (intensity * 2f - 1f) else intensity
         browParams[currentMode] = adjusted
+        isDirty = (currentMode != "less") && browParams.values.any { it != 0f }
         scheduleRealtimePreview()
     }
 
@@ -411,6 +415,16 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener {
         viewModel.commitPreview()
         act.binding.imgPreview.setImageBitmap(currentBitmap)
         hasApplied = true
+        isDirty = false
+    }
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            resetToOriginal()
+        }
     }
 
     override fun onDestroyView() {

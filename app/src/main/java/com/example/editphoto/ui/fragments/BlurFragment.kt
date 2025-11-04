@@ -9,16 +9,17 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentBlurBinding
 import com.example.editphoto.ui.activities.EditImageActivity
-import com.example.editphoto.utils.extent.updateImagePreserveZoom
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.view.BlurMaskView
 
-class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
+class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChangesListener {
     private lateinit var binding: FragmentBlurBinding
     private lateinit var parentActivity: EditImageActivity
     private var beforeEditBitmap: Bitmap? = null
     internal var hasApplied = false
+    private var isDirty = false
 
     private var blurMaskView: BlurMaskView? = null
 
@@ -56,11 +57,10 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
                     parentActivity.binding.imgPreview.setImageBitmap(out)
                 }
             }
-        }
-
-        blurMaskView?.onAppliedChange = { applied ->
-            if (applied) {
-                hasApplied = applied
+            onAppliedChange = { applied ->
+                if (applied) {
+                    this@BlurFragment.isDirty = true
+                }
             }
         }
 
@@ -70,6 +70,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
     }
 
     private fun initView() {
+
     }
 
     private fun initListener() {
@@ -87,19 +88,13 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
     }
 
 
-    internal fun  resetBlurToOriginal(){
-        beforeEditBitmap?.let {
-            parentActivity.viewModel.setPreview(null)
-            parentActivity.viewModel.updateBitmap(it)
-        }
-    }
-
     override fun onApply() {
         val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
         parentActivity.viewModel.setPreview(currentBitmap)
         parentActivity.viewModel.commitPreview()
         parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
         hasApplied = true
+        isDirty = false
 
     }
 
@@ -123,6 +118,18 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController {
 
     // Mặc định đặt SeekBar ở giữa
     override fun getDefaultIntensity(): Float = 0.5f
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            blurMaskView?.detach()
+            parentActivity.binding.imgPreview.setImageBitmap(beforeEditBitmap)
+            parentActivity.viewModel.setPreview(null)
+            isDirty = false
+        }
+    }
 
 
 }

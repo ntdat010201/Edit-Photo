@@ -14,13 +14,14 @@ import com.example.editphoto.model.ColorScalar
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import kotlinx.coroutines.*
 import kotlin.math.*
 
-class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
+class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChangesListener {
 
     private lateinit var binding: FragmentCheeksBinding
     private lateinit var viewModel: EditImageViewModel
@@ -42,6 +43,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
     private var selectedBorderView: ImageView? = null
 
     private val COLORLESS = ColorScalar(0.0, 0.0, 0.0)
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -107,6 +109,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         } else {
             selectedColor = color
             intensity = 0.0f
+            isDirty = false
             parentActivity.attachSeekBar(this)
             parentActivity.binding.seekBarIntensity.progress = 0
             scheduleRealtimePreview()
@@ -123,6 +126,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         rightCheekMask = null
         baseBitmap = null
         intensity = 0f
+        isDirty = false
     }
 
     override fun onIntensityChanged(intensity: Float) {
@@ -131,6 +135,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
             return
         }
         this.intensity = intensity
+        isDirty = (selectedColor != COLORLESS && intensity > 0f)
         scheduleRealtimePreview()
     }
 
@@ -313,6 +318,16 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener {
         viewModel.setPreview(currentBitmap)
         viewModel.commitPreview()
         hasApplied = true
+        isDirty = false
+    }
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            resetCheeksToOriginal()
+        }
     }
 
     override fun onDestroyView() {

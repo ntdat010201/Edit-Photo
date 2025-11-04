@@ -10,8 +10,9 @@ import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentTurnBinding
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 
-class TurnFragment : Fragment(), OnApplyListener {
+class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
 
     private lateinit var binding: FragmentTurnBinding
     private lateinit var parentActivity: EditImageActivity
@@ -22,6 +23,7 @@ class TurnFragment : Fragment(), OnApplyListener {
 
     private var totalRotation = 0f
     private var hasApplied = false
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,6 +59,7 @@ class TurnFragment : Fragment(), OnApplyListener {
                 val rotated = rotateBitmap(beforeRotateBitmap ?: it, totalRotation + degree)
                 tempRotatedBitmap = rotated
                 parentActivity.binding.imgPreview.setImageBitmap(rotated)
+                isDirty = true
             }
         }
     }
@@ -72,6 +75,7 @@ class TurnFragment : Fragment(), OnApplyListener {
                 tempRotatedBitmap = rotated
                 currentBitmap = rotated
                 parentActivity.binding.imgPreview.setImageBitmap(rotated)
+                isDirty = true
             }
         }
     }
@@ -81,6 +85,7 @@ class TurnFragment : Fragment(), OnApplyListener {
         val bitmap = tempRotatedBitmap ?: currentBitmap ?: return
         vm.setPreview(bitmap)
         hasApplied = true
+        isDirty = false
     }
 
     override fun onDestroyView() {
@@ -89,6 +94,21 @@ class TurnFragment : Fragment(), OnApplyListener {
             beforeRotateBitmap?.let {
                 parentActivity.binding.imgPreview.setImageBitmap(it)
             }
+        }
+    }
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            beforeRotateBitmap?.let {
+                parentActivity.binding.imgPreview.setImageBitmap(it)
+            }
+            tempRotatedBitmap = null
+            currentBitmap = beforeRotateBitmap
+            totalRotation = 0f
+            isDirty = false
         }
     }
 

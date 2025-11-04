@@ -20,6 +20,7 @@ import com.example.editphoto.model.ColorScalar
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
 import com.example.editphoto.utils.inter.SeekBarController
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 
 import com.example.editphoto.viewmodel.EditImageViewModel
 import com.google.mediapipe.framework.image.BitmapImageBuilder
@@ -29,8 +30,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.pow
 
-class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
+class LipsFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChangesListener {
 
     private lateinit var binding: FragmentLipsBinding
     private lateinit var viewModel: EditImageViewModel
@@ -52,6 +54,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
     private var selectedBorderView: ImageView? = null
 
     private val COLORLESS = ColorScalar(0.0, 0.0, 0.0)
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -124,6 +127,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
         } else {
             selectedColor = color
             intensity = 0.0f
+            isDirty = false
             parentActivity.attachSeekBar(this)
             parentActivity.binding.seekBarIntensity.progress = 0
             scheduleRealtimePreview()
@@ -139,6 +143,16 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
         lipMaskBitmap = null
         baseBitmap = null
         intensity = 0f
+        isDirty = false
+    }
+
+    // Public API để Activity kiểm tra trạng thái và hoàn tác khi rời fragment
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            resetLipToOriginal()
+        }
     }
 
     override fun onIntensityChanged(intensity: Float) {
@@ -147,6 +161,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
             return
         }
         this.intensity = intensity
+        isDirty = (selectedColor != COLORLESS && intensity > 0f)
         scheduleRealtimePreview()
     }
 
@@ -378,7 +393,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
         var B = 0.0557 * X - 0.2040 * Y + 1.0570 * Z
 
         fun linearToSrgb(c: Double): Double =
-            if (c <= 0.0031308) 12.92 * c else 1.055 * Math.pow(c, 1.0 / 2.4) - 0.055
+            if (c <= 0.0031308) 12.92 * c else 1.055 * c.pow(1.0 / 2.4) - 0.055
 
         R = linearToSrgb(R); G = linearToSrgb(G); B = linearToSrgb(B)
         return Triple(
@@ -393,6 +408,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener {
         viewModel.setPreview(currentBitmap)
         viewModel.commitPreview()
         hasApplied = true
+        isDirty = false
     }
 
     override fun onDestroyView() {

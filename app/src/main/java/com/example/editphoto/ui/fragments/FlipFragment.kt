@@ -10,8 +10,9 @@ import androidx.fragment.app.Fragment
 import com.example.editphoto.databinding.FragmentFlipBinding
 import com.example.editphoto.ui.activities.EditImageActivity
 import com.example.editphoto.utils.inter.OnApplyListener
+import com.example.editphoto.utils.inter.UnsavedChangesListener
 
-class FlipFragment : Fragment(), OnApplyListener {
+class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
 
     private lateinit var binding: FragmentFlipBinding
     private lateinit var parentActivity: EditImageActivity
@@ -21,6 +22,7 @@ class FlipFragment : Fragment(), OnApplyListener {
     private var currentBitmap: Bitmap? = null
 
     private var hasApplied = false
+    private var isDirty = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -53,6 +55,7 @@ class FlipFragment : Fragment(), OnApplyListener {
                 tempFlippedBitmap = flipped
                 currentBitmap = flipped
                 parentActivity.binding.imgPreview.setImageBitmap(flipped)
+                isDirty = true
             }
         }
 
@@ -62,6 +65,7 @@ class FlipFragment : Fragment(), OnApplyListener {
                 tempFlippedBitmap = flipped
                 currentBitmap = flipped
                 parentActivity.binding.imgPreview.setImageBitmap(flipped)
+                isDirty = true
             }
         }
     }
@@ -84,6 +88,7 @@ class FlipFragment : Fragment(), OnApplyListener {
         parentActivity.viewModel.commitPreview()
 
         hasApplied = true
+        isDirty = false
     }
 
     override fun onDestroyView() {
@@ -92,6 +97,20 @@ class FlipFragment : Fragment(), OnApplyListener {
             beforeFlipBitmap?.let {
                 parentActivity.binding.imgPreview.setImageBitmap(it)
             }
+        }
+    }
+
+    // UnsavedChangesListener
+    override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
+
+    override fun revertUnsavedChanges() {
+        if (!hasApplied) {
+            beforeFlipBitmap?.let {
+                parentActivity.binding.imgPreview.setImageBitmap(it)
+            }
+            tempFlippedBitmap = null
+            currentBitmap = beforeFlipBitmap
+            isDirty = false
         }
     }
 }
