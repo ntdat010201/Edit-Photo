@@ -13,6 +13,16 @@ open class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideSystemUiBar(window)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemUiBar(window)
+    }
+
     fun hideSystemUiBar(window: Window) {
         val decorView = window.decorView
         WindowCompat.setDecorFitsSystemWindows(window, false)

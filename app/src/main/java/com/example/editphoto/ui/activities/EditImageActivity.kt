@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
@@ -25,6 +26,7 @@ import com.example.editphoto.enums.FeatureType
 import com.example.editphoto.enums.SubType
 import com.example.editphoto.model.PhotoModel
 import com.example.editphoto.model.SubModel
+import com.example.editphoto.ui.dialog.UnsavedChangesDialogFragment
 import com.example.editphoto.ui.fragments.BlurFragment
 import com.example.editphoto.ui.fragments.CheeksFragment
 import com.example.editphoto.ui.fragments.CutFragment
@@ -32,8 +34,6 @@ import com.example.editphoto.ui.fragments.EyebrowFragment
 import com.example.editphoto.ui.fragments.EyesFragment
 import com.example.editphoto.ui.fragments.FlipFragment
 import com.example.editphoto.ui.fragments.LipsFragment
-import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.Fragment
 import com.example.editphoto.ui.fragments.TurnFragment
 import com.example.editphoto.utils.extent.listAdjust
 import com.example.editphoto.utils.extent.listAdjustSub
@@ -184,21 +184,20 @@ class EditImageActivity : BaseActivity() {
 
                 val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
                 if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Lưu chỉnh sửa?")
-                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
-                        .setPositiveButton("Lưu") { _, _ ->
+                    UnsavedChangesDialogFragment.show(
+                        fm = supportFragmentManager,
+                        onSave = {
                             (currentFragment as? OnApplyListener)?.onApply()
                             proceedFeatureSwitch(item.type)
-                        }
-                        .setNegativeButton("Không") { _, _ ->
+                        },
+                        onDiscard = {
                             currentFragment.revertUnsavedChanges()
                             proceedFeatureSwitch(item.type)
-                        }
-                        .setNeutralButton("Hủy") { _, _ ->
+                        },
+                        onCancel = {
                             // do nothing
                         }
-                        .show()
+                    )
                 } else {
                     proceedFeatureSwitch(item.type)
                 }
@@ -321,21 +320,20 @@ class EditImageActivity : BaseActivity() {
 
                 val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
                 if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Lưu chỉnh sửa?")
-                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
-                        .setPositiveButton("Lưu") { _, _ ->
+                    UnsavedChangesDialogFragment.show(
+                        fm = supportFragmentManager,
+                        onSave = {
                             (currentFragment as? OnApplyListener)?.onApply()
                             targetFragment?.let { proceedReplace(it) }
-                        }
-                        .setNegativeButton("Không") { _, _ ->
+                        },
+                        onDiscard = {
                             currentFragment.revertUnsavedChanges()
                             targetFragment?.let { proceedReplace(it) }
-                        }
-                        .setNeutralButton("Hủy") { _, _ ->
+                        },
+                        onCancel = {
                             // do nothing
                         }
-                        .show()
+                    )
                 } else {
                     targetFragment?.let { proceedReplace(it) }
                 }
@@ -382,21 +380,20 @@ class EditImageActivity : BaseActivity() {
 
                 val currentFragment = supportFragmentManager.findFragmentById(R.id.editContainer)
                 if (currentFragment is UnsavedChangesListener && currentFragment.hasUnsavedChanges()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Lưu chỉnh sửa?")
-                        .setMessage("Bạn có muốn lưu các chỉnh sửa đang thực hiện không?")
-                        .setPositiveButton("Lưu") { _, _ ->
+                    UnsavedChangesDialogFragment.show(
+                        fm = supportFragmentManager,
+                        onSave = {
                             (currentFragment as? OnApplyListener)?.onApply()
                             targetFragment?.let { proceedReplace(it) }
-                        }
-                        .setNegativeButton("Không") { _, _ ->
+                        },
+                        onDiscard = {
                             currentFragment.revertUnsavedChanges()
                             targetFragment?.let { proceedReplace(it) }
-                        }
-                        .setNeutralButton("Hủy") { _, _ ->
+                        },
+                        onCancel = {
                             // do nothing
                         }
-                        .show()
+                    )
                 } else {
                     targetFragment?.let { proceedReplace(it) }
                 }

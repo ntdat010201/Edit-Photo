@@ -41,12 +41,13 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
+
             android:gravity="center"
-            android:text="Save"
+            android:text="Xuất ảnh"
             android:textColor="#63626E"
             android:textSize="14sp"
             android:id="@+id/tv_save"
-            android:layout_width="@dimen/_28sdp"
+            android:layout_width="@dimen/_68sdp"
             android:layout_height="@dimen/_28sdp"
             app:layout_constraintBottom_toBottomOf="@+id/img_back"
             app:layout_constraintEnd_toEndOf="parent"

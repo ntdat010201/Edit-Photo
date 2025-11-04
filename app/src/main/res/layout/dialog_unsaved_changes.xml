@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <View
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:clickable="true" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:background="@drawable/rounded_square_gray">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lưu chỉnh sửa?"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#000000" />
+
+        <TextView
+            android:id="@+id/tvMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Bạn có muốn lưu các chỉnh sửa đang thực hiện không?"
+            android:textSize="14sp"
+            android:textColor="#333333" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btnNeutral"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hủy" />
+
+            <Button
+                android:layout_marginStart="8dp"
+                android:id="@+id/btnNegative"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Không" />
+
+
+
+            <Button
+                android:id="@+id/btnPositive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Lưu" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>
