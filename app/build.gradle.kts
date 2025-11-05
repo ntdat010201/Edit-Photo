@@ -83,5 +83,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    //PhotoEditor
+    implementation ("com.github.burhanrashid52:PhotoEditor:3.0.1")
+
 }
 
