@@ -45,7 +45,7 @@ class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
     }
 
     private fun initView() {
-        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+            parentActivity.updateImagePreserveZoom(currentBitmap!!)
     }
 
     private fun initListener() {
@@ -54,7 +54,7 @@ class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
                 val flipped = flipBitmap(it, horizontal = true)
                 tempFlippedBitmap = flipped
                 currentBitmap = flipped
-                parentActivity.binding.imgPreview.setImageBitmap(flipped)
+            parentActivity.updateImagePreserveZoom(flipped)
                 isDirty = true
             }
         }
@@ -64,7 +64,7 @@ class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
                 val flipped = flipBitmap(it, horizontal = false)
                 tempFlippedBitmap = flipped
                 currentBitmap = flipped
-                parentActivity.binding.imgPreview.setImageBitmap(flipped)
+            parentActivity.updateImagePreserveZoom(flipped)
                 isDirty = true
             }
         }
@@ -95,7 +95,7 @@ class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
         super.onDestroyView()
         if (!hasApplied) {
             beforeFlipBitmap?.let {
-                parentActivity.binding.imgPreview.setImageBitmap(it)
+            parentActivity.updateImagePreserveZoom(it)
             }
         }
     }
@@ -106,7 +106,7 @@ class FlipFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
     override fun revertUnsavedChanges() {
         if (!hasApplied) {
             beforeFlipBitmap?.let {
-                parentActivity.binding.imgPreview.setImageBitmap(it)
+            parentActivity.updateImagePreserveZoom(it)
             }
             tempFlippedBitmap = null
             currentBitmap = beforeFlipBitmap

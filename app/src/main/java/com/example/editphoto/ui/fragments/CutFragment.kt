@@ -106,7 +106,7 @@ class CutFragment : Fragment(), OnApplyListener {
 
         cropView?.setImageBitmap(cropped)
 
-        parentActivity.binding.imgPreview.setImageBitmap(cropped)
+            parentActivity.updateImagePreserveZoom(cropped)
     }
 
 

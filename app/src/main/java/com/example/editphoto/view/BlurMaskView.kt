@@ -12,6 +12,7 @@ import android.graphics.PorterDuffXfermode
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.ImageView
+import com.github.chrisbanes.photoview.PhotoView
 import kotlin.math.min
 
 class BlurMaskView @JvmOverloads constructor(
@@ -120,15 +121,23 @@ class BlurMaskView @JvmOverloads constructor(
         maskCanvas = Canvas(maskBitmap!!)
         clearMask()
 
-        // Gắn touch vào ImageView mục tiêu
-        imageView.setOnTouchListener { _, event ->
-            val b = baseBitmap ?: return@setOnTouchListener true
+        imageView.setOnTouchListener { v, event ->
+            val b = baseBitmap ?: return@setOnTouchListener false
+
+            // === 1. XỬ LÝ 2 NGÓN TAY: ZOOM & PAN ===
+            if (event.pointerCount >= 2) {
+                // Cho PhotoView nhận toàn bộ sự kiện đa điểm
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                return@setOnTouchListener v.onTouchEvent(event) // QUAN TRỌNG: trả về kết quả PhotoView
+            }
+
+            // === 2. XỬ LÝ 1 NGÓN TAY: VẼ BLUR / TẨY ===
+            v.parent?.requestDisallowInterceptTouchEvent(true) // Chặn ViewPager/ScrollView
             val pt = mapTouchToBitmap(event.x, event.y, imageView, b)
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (!hasDrawn) {
-                        hasDrawn = true  // Bắn 1 lần duy nhất
-                    }
+                    if (!hasDrawn) hasDrawn = true
 
                     path.reset()
                     path.moveTo(pt.first, pt.second)
@@ -155,7 +164,7 @@ class BlurMaskView @JvmOverloads constructor(
                     compositeAndCallback()
                 }
             }
-            true
+            true // Tiêu thụ sự kiện vẽ
         }
     }
 
@@ -220,17 +229,28 @@ class BlurMaskView @JvmOverloads constructor(
     }
 
     private fun mapTouchToBitmap(x: Float, y: Float, imageView: ImageView, bitmap: Bitmap): Pair<Float, Float> {
-        val viewW = imageView.width
-        val viewH = imageView.height
-        val imgW = bitmap.width
-        val imgH = bitmap.height
+        val imgW = bitmap.width.toFloat()
+        val imgH = bitmap.height.toFloat()
 
-        val scale = min(viewW.toFloat() / imgW.toFloat(), viewH.toFloat() / imgH.toFloat())
+        // Ưu tiên dùng PhotoView displayRect (đã bao gồm zoom/pan)
+        val pv = imageView as? PhotoView
+        val rect = pv?.attacher?.displayRect
+        if (rect != null && rect.width() > 0 && rect.height() > 0) {
+            val nx = ((x - rect.left) / rect.width()).coerceIn(0f, 1f)
+            val ny = ((y - rect.top) / rect.height()).coerceIn(0f, 1f)
+            val bx = (nx * imgW).coerceIn(0f, imgW - 1f)
+            val by = (ny * imgH).coerceIn(0f, imgH - 1f)
+            return Pair(bx, by)
+        }
+
+        // Fallback: fit-center mapping nếu không phải PhotoView
+        val viewW = imageView.width.toFloat()
+        val viewH = imageView.height.toFloat()
+        val scale = min(viewW / imgW, viewH / imgH)
         val dx = (viewW - imgW * scale) / 2f
         val dy = (viewH - imgH * scale) / 2f
-
-        val bx = ((x - dx) / scale).coerceIn(0f, (imgW - 1).toFloat())
-        val by = ((y - dy) / scale).coerceIn(0f, (imgH - 1).toFloat())
+        val bx = ((x - dx) / scale).coerceIn(0f, imgW - 1f)
+        val by = ((y - dy) / scale).coerceIn(0f, imgH - 1f)
         return Pair(bx, by)
     }
 

@@ -178,7 +178,7 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedCha
             val tmp = applyBlushSoftLight(base, leftMask, selectedColor, intensity)
             val bitmapOut = applyBlushSoftLight(tmp, rightMask, selectedColor, intensity)
             withContext(Dispatchers.Main) {
-                parentActivity.binding.imgPreview.setImageBitmap(bitmapOut)
+            parentActivity.updateImagePreserveZoom(bitmapOut)
             }
         }
     }

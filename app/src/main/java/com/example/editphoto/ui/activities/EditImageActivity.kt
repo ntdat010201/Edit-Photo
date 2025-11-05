@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.SeekBar
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.net.toUri
@@ -130,19 +131,17 @@ class EditImageActivity : BaseActivity() {
 
     private fun observeViewModel() {
         viewModel.editedBitmap.observe(this) { bitmap ->
-            Log.d("DAT", "observeViewModel: " + "bitmap")
-            binding.imgPreview.setImageBitmap(bitmap)
+            Log.d("DAT", "observeViewModel: bitmap")
+            updateImagePreserveZoom(bitmap)
         }
 
         viewModel.previewBitmap.observe(this) { preview ->
             if (preview != null) {
-                binding.imgPreview.setImageBitmap(preview)
-                Log.d("DAT", "observeViewModel: " + "preview")
-
+                Log.d("DAT", "observeViewModel: preview")
+                updateImagePreserveZoom(preview)
             } else {
-                Log.d("DAT", "observeViewModel: " + "preview null")
-                viewModel.editedBitmap.value?.let { binding.imgPreview.setImageBitmap(it) }
-
+                Log.d("DAT", "observeViewModel: preview null")
+                viewModel.editedBitmap.value?.let { updateImagePreserveZoom(it) }
             }
         }
     }
@@ -509,6 +508,44 @@ class EditImageActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         faceLandmarker?.close()
+    }
+
+
+    // đồng thời KHÔNG làm thay đổi bitmap gốc trong ViewModel khi chưa Apply.
+    fun updateImagePreserveZoom(newBitmap: Bitmap, view: ImageView = binding.imgPreview) {
+        val photoView = binding.imgPreview
+        val prevScale = try { photoView.scale } catch (_: Exception) { 1f }
+        val displayRect = try { photoView.attacher?.displayRect } catch (_: Exception) { null }
+        val focusX = displayRect?.centerX() ?: (photoView.width / 2f)
+        val focusY = displayRect?.centerY() ?: (photoView.height / 2f)
+
+        val drawable = view.drawable
+        if (drawable is android.graphics.drawable.BitmapDrawable) {
+            val oldBitmap = drawable.bitmap
+            // Nếu cùng kích thước và bitmap hiển thị mutable: vẽ-in-place để mượt
+            if (oldBitmap.width == newBitmap.width &&
+                oldBitmap.height == newBitmap.height &&
+                oldBitmap.isMutable
+            ) {
+                val canvas = android.graphics.Canvas(oldBitmap)
+                canvas.drawBitmap(newBitmap, 0f, 0f, null)
+                view.invalidate()
+                return
+            }
+        }
+
+        // Khác kích thước HOẶC bitmap hiển thị không mutable: tạo bản sao mutable và set
+        val copy = try { newBitmap.copy(Bitmap.Config.ARGB_8888, true) } catch (_: Exception) { newBitmap }
+        view.setImageBitmap(copy)
+
+        // Khôi phục zoom/pan trước đó nếu có
+        photoView.post {
+            if (prevScale > 1f) {
+                try {
+                    photoView.setScale(prevScale, focusX, focusY, false)
+                } catch (_: Exception) { /* no-op */ }
+            }
+        }
     }
 
     fun attachSeekBar(controller: SeekBarController) {

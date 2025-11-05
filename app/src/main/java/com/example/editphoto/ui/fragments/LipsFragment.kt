@@ -146,7 +146,6 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
         isDirty = false
     }
 
-    // Public API để Activity kiểm tra trạng thái và hoàn tác khi rời fragment
     override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
 
     override fun revertUnsavedChanges() {
@@ -200,7 +199,7 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
 
             val bitmapOut = applyLipColorBitmap(base, mask, selectedColor, intensity)
             withContext(Dispatchers.Main) {
-                parentActivity.binding.imgPreview.setImageBitmap(bitmapOut)
+                parentActivity.updateImagePreserveZoom(bitmapOut)
             }
         }
     }

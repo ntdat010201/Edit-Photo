@@ -248,7 +248,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
 
             val bitmapOut = dst.toBitmap()
             withContext(Dispatchers.Main) {
-                act.binding.imgPreview.setImageBitmap(bitmapOut)
+                act.updateImagePreserveZoom(bitmapOut)
             }
             dst.release(); src.release()
         }
@@ -413,7 +413,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
         val currentBitmap = act.binding.imgPreview.drawable?.toBitmap() ?: return
         viewModel.setPreview(currentBitmap)
         viewModel.commitPreview()
-        act.binding.imgPreview.setImageBitmap(currentBitmap)
+            act.updateImagePreserveZoom(currentBitmap)
         hasApplied = true
         isDirty = false
     }
@@ -434,7 +434,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
 
         if (!hasApplied) {
             beforeEditBitmap?.let {
-                act.binding.imgPreview.setImageBitmap(it)
+            act.updateImagePreserveZoom(it)
                 viewModel.setPreview(null)
             }
         }

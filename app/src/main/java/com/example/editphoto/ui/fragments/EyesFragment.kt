@@ -225,7 +225,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
         val outBmp = Bitmap.createBitmap(result.cols(), result.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(result, outBmp)
         lifecycleScope.launch(Dispatchers.Main) {
-            act.binding.imgPreview.setImageBitmap(outBmp)
+            act.updateImagePreserveZoom(outBmp)
         }
         src.release()
         result.release()
@@ -391,7 +391,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
 
         viewModel.setPreview(currentBitmap)
         viewModel.commitPreview() // Lưu thay đổi vào editedBitmap
-        act.binding.imgPreview.setImageBitmap(currentBitmap)
+            act.updateImagePreserveZoom(currentBitmap)
 
         hasApplied = true
         isDirty = false
@@ -413,7 +413,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
 
         if (!hasApplied) {
             beforeEditBitmap?.let {
-                act.binding.imgPreview.setImageBitmap(it)
+            act.updateImagePreserveZoom(it)
                 viewModel.setPreview(null)
             }
         }

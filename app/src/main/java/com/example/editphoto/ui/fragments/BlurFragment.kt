@@ -54,7 +54,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
                     blurRadius = 80
                 ) { out ->
 
-                    parentActivity.binding.imgPreview.setImageBitmap(out)
+            parentActivity.updateImagePreserveZoom(out)
                 }
             }
             onAppliedChange = { applied ->
@@ -92,7 +92,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
         val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
         parentActivity.viewModel.setPreview(currentBitmap)
         parentActivity.viewModel.commitPreview()
-        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+            parentActivity.updateImagePreserveZoom(currentBitmap)
         hasApplied = true
         isDirty = false
 
@@ -105,7 +105,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
         parentActivity.detachSeekBar()
         if (!hasApplied) {
             beforeEditBitmap.let {
-                parentActivity.binding.imgPreview.setImageBitmap(it)
+            parentActivity.updateImagePreserveZoom(it!!)
                 parentActivity.viewModel.setPreview(null)
             }
         }
@@ -125,7 +125,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
     override fun revertUnsavedChanges() {
         if (!hasApplied) {
             blurMaskView?.detach()
-            parentActivity.binding.imgPreview.setImageBitmap(beforeEditBitmap)
+            parentActivity.updateImagePreserveZoom(beforeEditBitmap!!)
             parentActivity.viewModel.setPreview(null)
             isDirty = false
         }

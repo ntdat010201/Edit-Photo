@@ -50,7 +50,7 @@ class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
     }
 
     private fun initView() {
-        parentActivity.binding.imgPreview.setImageBitmap(currentBitmap)
+            parentActivity.updateImagePreserveZoom(currentBitmap!!)
     }
 
     private fun initRuler() {
@@ -58,7 +58,7 @@ class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
             currentBitmap?.let {
                 val rotated = rotateBitmap(beforeRotateBitmap ?: it, totalRotation + degree)
                 tempRotatedBitmap = rotated
-                parentActivity.binding.imgPreview.setImageBitmap(rotated)
+            parentActivity.updateImagePreserveZoom(rotated)
                 isDirty = true
             }
         }
@@ -74,7 +74,7 @@ class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
                 val rotated = rotateBitmap(beforeRotateBitmap ?: it, totalRotation)
                 tempRotatedBitmap = rotated
                 currentBitmap = rotated
-                parentActivity.binding.imgPreview.setImageBitmap(rotated)
+            parentActivity.updateImagePreserveZoom(rotated)
                 isDirty = true
             }
         }
@@ -92,7 +92,7 @@ class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
         super.onDestroyView()
         if (!hasApplied) {
             beforeRotateBitmap?.let {
-                parentActivity.binding.imgPreview.setImageBitmap(it)
+            parentActivity.updateImagePreserveZoom(it)
             }
         }
     }
@@ -103,7 +103,7 @@ class TurnFragment : Fragment(), OnApplyListener,UnsavedChangesListener {
     override fun revertUnsavedChanges() {
         if (!hasApplied) {
             beforeRotateBitmap?.let {
-                parentActivity.binding.imgPreview.setImageBitmap(it)
+            parentActivity.updateImagePreserveZoom(it)
             }
             tempRotatedBitmap = null
             currentBitmap = beforeRotateBitmap
