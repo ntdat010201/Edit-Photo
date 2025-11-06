@@ -3,11 +3,18 @@ package com.example.editphoto.ui.activities
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.os.Bundle
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.util.TypedValue
 import android.view.ScaleGestureDetector
+import android.view.GestureDetector
+import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.MotionEvent
+// removed DisplayManager; use previewView.display for Display
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -16,7 +23,13 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.Preview
+import androidx.camera.camera2.interop.Camera2Interop
+import android.hardware.camera2.CaptureRequest
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -42,6 +55,9 @@ class CameraActivity : BaseActivity() {
     private val viewModel: CameraViewModel by viewModels()
     private var camera: Camera? = null
     private lateinit var scaleGestureDetector: ScaleGestureDetector
+    private lateinit var gestureDetector: GestureDetector
+    private val AF_SIZE = 1.0f / 6.0f
+    private val AE_SIZE = AF_SIZE * 1.5f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,9 +132,35 @@ class CameraActivity : BaseActivity() {
             updateZoomUI(2f)
         }
 
+        // Pinch-to-zoom + tap-to-focus
+        gestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
+                camera?.cameraInfo?.let { info ->
+                    val width = binding.previewView.width.toFloat()
+                    val height = binding.previewView.height.toFloat()
+                    val display = binding.previewView.display ?: return false
+                    val factory = DisplayOrientedMeteringPointFactory(
+                        display,
+                        info,
+                        width,
+                        height
+                    )
+                    val afPoint = factory.createPoint(event.x, event.y, AF_SIZE)
+                    val aePoint = factory.createPoint(event.x, event.y, AE_SIZE)
+                    val action = FocusMeteringAction.Builder(afPoint, FocusMeteringAction.FLAG_AF)
+                        .addPoint(aePoint, FocusMeteringAction.FLAG_AE)
+                        .build()
+                    camera?.cameraControl?.startFocusAndMetering(action)
+                    return true
+                }
+                return false
+            }
+        })
+
         binding.previewView.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            true
+            val handledGesture = gestureDetector.onTouchEvent(event)
+            val handledScale = scaleGestureDetector.onTouchEvent(event)
+            handledGesture || handledScale
         }
 
 
@@ -148,13 +190,33 @@ class CameraActivity : BaseActivity() {
         }
     }
 
+    @OptIn(ExperimentalCamera2Interop::class)
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder().build().also {
+            val previewBuilder = Preview.Builder()
+            val previewExtender = Camera2Interop.Extender(previewBuilder)
+            previewExtender.setCaptureRequestOption(
+                CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+            )
+            previewExtender.setCaptureRequestOption(
+                CaptureRequest.NOISE_REDUCTION_MODE,
+                CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY
+            )
+            previewExtender.setCaptureRequestOption(
+                CaptureRequest.EDGE_MODE,
+                CaptureRequest.EDGE_MODE_HIGH_QUALITY
+            )
+            previewExtender.setCaptureRequestOption(
+                CaptureRequest.CONTROL_AWB_MODE,
+                CaptureRequest.CONTROL_AWB_MODE_AUTO
+            )
+
+            val preview = previewBuilder.build().also {
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
 
@@ -164,10 +226,33 @@ class CameraActivity : BaseActivity() {
                 )
                 .build()
 
-            imageCapture = ImageCapture.Builder()
+            val icBuilder = ImageCapture.Builder()
+            val icExtender = Camera2Interop.Extender(icBuilder)
+            icExtender.setCaptureRequestOption(
+                CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+            )
+            icExtender.setCaptureRequestOption(
+                CaptureRequest.NOISE_REDUCTION_MODE,
+                CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY
+            )
+            icExtender.setCaptureRequestOption(
+                CaptureRequest.EDGE_MODE,
+                CaptureRequest.EDGE_MODE_HIGH_QUALITY
+            )
+            icExtender.setCaptureRequestOption(
+                CaptureRequest.CONTROL_AWB_MODE,
+                CaptureRequest.CONTROL_AWB_MODE_AUTO
+            )
+            icExtender.setCaptureRequestOption(
+                CaptureRequest.CONTROL_AE_LOCK,
+                false
+            )
+
+            imageCapture = icBuilder
                 .setResolutionSelector(resolutionSelector)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .setFlashMode(viewModel.flashMode.value ?: ImageCapture.FLASH_MODE_OFF)
+                .setFlashMode(viewModel.flashMode.value ?: ImageCapture.FLASH_MODE_AUTO)
                 .setTargetRotation(binding.previewView.display.rotation)
                 .setJpegQuality(100)
                 .build()
@@ -181,6 +266,12 @@ class CameraActivity : BaseActivity() {
                     imageCapture
                 )
                 Log.d("CameraActivity", "Flash available: ${camera?.cameraInfo?.hasFlashUnit()}")
+                // Make image slightly brighter compared to system camera: +1 EV if supported
+                camera?.cameraInfo?.exposureState?.exposureCompensationRange?.let { range ->
+                    if (range.upper >= 1) {
+                        camera?.cameraControl?.setExposureCompensationIndex(1)
+                    }
+                }
                 updateZoomState(viewModel.zoomState.value ?: 1f)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -191,12 +282,13 @@ class CameraActivity : BaseActivity() {
     private fun takePhoto() {
         val imageCapture = imageCapture ?: return
 
-        val fileName = "IMG_${System.currentTimeMillis()}"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "$fileName.jpg")
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/EditPhoto")
-        }
+        val centerFocusAndCapture = {
+            val fileName = "IMG_${System.currentTimeMillis()}"
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "$fileName.jpg")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/EditPhoto")
+            }
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
             contentResolver,
@@ -204,42 +296,86 @@ class CameraActivity : BaseActivity() {
             contentValues
         ).build()
 
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exception: ImageCaptureException) {
-                    exception.printStackTrace()
-                    Toast.makeText(this@CameraActivity, "Lưu ảnh thất bại!", Toast.LENGTH_SHORT).show()
-                }
+            imageCapture.takePicture(
+                outputOptions,
+                ContextCompat.getMainExecutor(this),
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onError(exception: ImageCaptureException) {
+                        exception.printStackTrace()
+                        Toast.makeText(this@CameraActivity, "Lưu ảnh thất bại!", Toast.LENGTH_SHORT).show()
+                    }
 
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val savedUri = outputFileResults.savedUri ?: return
-                    val ratio = viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        val savedUri = outputFileResults.savedUri ?: return
+                        val ratio = viewModel.aspectRatio.value ?: AspectRatio.RATIO_4_3
 
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        try {
-                            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, savedUri)
-                            val cropped = cropBitmapToRatio(bitmap, ratio)
-                            val out = contentResolver.openOutputStream(savedUri)
-                            out?.let { cropped.compress(Bitmap.CompressFormat.JPEG, 100, it) }
-                            out?.close()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                val bitmap = if (Build.VERSION.SDK_INT >= 28) {
+                                    val src = ImageDecoder.createSource(contentResolver, savedUri)
+                                    ImageDecoder.decodeBitmap(src)
+                                } else {
+                                    val input = contentResolver.openInputStream(savedUri)
+                                    BitmapFactory.decodeStream(input)
+                                }
+                                val cropped = cropBitmapToRatio(bitmap, ratio)
+                                val out = contentResolver.openOutputStream(savedUri)
+                                out?.let { cropped.compress(Bitmap.CompressFormat.JPEG, 100, it) }
+                                out?.close()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
 
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@CameraActivity,
-                                "Ảnh đã lưu vào Pictures/EditPhoto",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            viewModel.setImageUri(savedUri.toString())
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    this@CameraActivity,
+                                    "Ảnh đã lưu vào Pictures/EditPhoto",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                viewModel.setImageUri(savedUri.toString())
+                            }
                         }
                     }
                 }
+            )
+        }
+
+        // Lấy nét trung tâm trước khi chụp để ảnh sắc nét hơn
+        val info = camera?.cameraInfo
+        val control = camera?.cameraControl
+        if (info != null && control != null) {
+            val width = binding.previewView.width.toFloat()
+            val height = binding.previewView.height.toFloat()
+            val display = binding.previewView.display
+            if (display == null) {
+                centerFocusAndCapture()
+                return
             }
-        )
+            val factory = DisplayOrientedMeteringPointFactory(
+                display,
+                info,
+                width,
+                height
+            )
+            val x = width / 2f
+            val y = height / 2f
+            val afPoint = factory.createPoint(x, y, AF_SIZE)
+            val aePoint = factory.createPoint(x, y, AE_SIZE)
+            val action = FocusMeteringAction.Builder(afPoint, FocusMeteringAction.FLAG_AF)
+                .addPoint(aePoint, FocusMeteringAction.FLAG_AE)
+                .build()
+            val future = control.startFocusAndMetering(action)
+            future.addListener({
+                try {
+                    val result = future.get()
+                    // Nếu cần, có thể kiểm tra result.isFocusSuccessful để quyết định retry
+                } catch (_: Exception) {
+                }
+                centerFocusAndCapture()
+            }, ContextCompat.getMainExecutor(this))
+        } else {
+            centerFocusAndCapture()
+        }
     }
 
     private fun cropBitmapToRatio(bitmap: Bitmap, aspectRatio: Int): Bitmap {
