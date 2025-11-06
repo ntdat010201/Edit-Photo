@@ -129,6 +129,27 @@ class EditImageActivity : BaseActivity() {
         binding.editContainer.visibility = View.VISIBLE
     }
 
+    /**
+     * Hiển thị PhotoEditorView với bitmap hiện tại để thêm sticker
+     */
+    fun showStickerEditor() {
+        val baseBitmap = (binding.imgPreview.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+            ?: viewModel.editedBitmap.value
+        baseBitmap?.let {
+            binding.photoEditorView.source.setImageBitmap(it)
+            binding.photoEditorView.visibility = View.VISIBLE
+            binding.imgPreview.visibility = View.GONE
+        }
+    }
+
+    /**
+     * Ẩn PhotoEditorView và quay lại PhotoView sau khi áp dụng
+     */
+    fun hideStickerEditor() {
+        binding.photoEditorView.visibility = View.GONE
+        binding.imgPreview.visibility = View.VISIBLE
+    }
+
     private fun observeViewModel() {
         viewModel.editedBitmap.observe(this) { bitmap ->
             Log.d("DAT", "observeViewModel: bitmap")
@@ -181,6 +202,7 @@ class EditImageActivity : BaseActivity() {
                                 .replace(R.id.editContainer, IconFragment())
                                 .commit()
                             binding.editContainer.visibility = View.VISIBLE
+                            hideStickerEditor()
                         }
                     }
                 }
@@ -420,7 +442,6 @@ class EditImageActivity : BaseActivity() {
             adapter = subAdapter
         }
 
-        // Ensure adapter highlights the current subtype initially
         currentSubType?.let { subType ->
             val initialIndex = list.indexOfFirst { it.type == subType }
             if (initialIndex >= 0) {
@@ -431,7 +452,7 @@ class EditImageActivity : BaseActivity() {
 
         subAdapter.onItemClick = { item ->
             if (currentSubType == item.type) {
-                // no-op when clicking the already selected option
+                /**/
             } else {
                 val proceedReplace: (Fragment) -> Unit = { frag ->
                     currentSubType = item.type
@@ -461,7 +482,6 @@ class EditImageActivity : BaseActivity() {
                             targetFragment?.let { proceedReplace(it) }
                         },
                         onCancel = {
-                            // Revert visual selection to the previously selected subtype
                             val previousIndex = currentSubType?.let { prev ->
                                 list.indexOfFirst { it.type == prev }
                             } ?: -1
@@ -511,7 +531,6 @@ class EditImageActivity : BaseActivity() {
     }
 
 
-    // đồng thời KHÔNG làm thay đổi bitmap gốc trong ViewModel khi chưa Apply.
     fun updateImagePreserveZoom(newBitmap: Bitmap, view: ImageView = binding.imgPreview) {
         val photoView = binding.imgPreview
         val prevScale = try { photoView.scale } catch (_: Exception) { 1f }
@@ -522,7 +541,6 @@ class EditImageActivity : BaseActivity() {
         val drawable = view.drawable
         if (drawable is android.graphics.drawable.BitmapDrawable) {
             val oldBitmap = drawable.bitmap
-            // Nếu cùng kích thước và bitmap hiển thị mutable: vẽ-in-place để mượt
             if (oldBitmap.width == newBitmap.width &&
                 oldBitmap.height == newBitmap.height &&
                 oldBitmap.isMutable
@@ -534,11 +552,9 @@ class EditImageActivity : BaseActivity() {
             }
         }
 
-        // Khác kích thước HOẶC bitmap hiển thị không mutable: tạo bản sao mutable và set
         val copy = try { newBitmap.copy(Bitmap.Config.ARGB_8888, true) } catch (_: Exception) { newBitmap }
         view.setImageBitmap(copy)
 
-        // Khôi phục zoom/pan trước đó nếu có
         photoView.post {
             if (prevScale > 1f) {
                 try {

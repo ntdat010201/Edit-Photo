@@ -80,7 +80,7 @@ class CameraActivity : BaseActivity() {
             }
         }
 
-        // Chỉ cập nhật preview, không restart camera
+        // cập nhật preview
         viewModel.aspectRatio.observe(this) { ratio ->
             updatePreviewViewAspectRatio(ratio)
         }
@@ -121,7 +121,7 @@ class CameraActivity : BaseActivity() {
             true
         }
 
-        // Đổi tỷ lệ nhưng không restart camera
+
         binding.constraintFull.setOnClickListener {
             viewModel.setAspectRatio(ASPECT_RATIO_FULL)
             updateAspectRatioUI(ASPECT_RATIO_FULL)
@@ -247,7 +247,7 @@ class CameraActivity : BaseActivity() {
         val height = bitmap.height
         val targetRatio = when (aspectRatio) {
             AspectRatio.RATIO_16_9 -> 9f / 16f
-            ASPECT_RATIO_FULL -> height.toFloat() / width // full màn giữ nguyên
+            ASPECT_RATIO_FULL -> height.toFloat() / width
             else -> 3f / 4f
         }
 

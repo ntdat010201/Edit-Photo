@@ -100,13 +100,11 @@ class BlurMaskView @JvmOverloads constructor(
         previewCallback = null
     }
 
-    // ===================== GESTURE VẼ ======================
     private var isZooming = false
     private var ignoreNextDown = false
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // ⚠️ Nếu View không hiển thị hoặc không được phép nhận touch -> bỏ qua hoàn toàn
         if (!isShown || visibility != View.VISIBLE || !isEnabled) {
             return false
         }
@@ -121,7 +119,6 @@ class BlurMaskView @JvmOverloads constructor(
                 path.reset()
                 lastX = -1f
                 lastY = -1f
-                // Cho PhotoView xử lý gesture zoom
                 return photoView.dispatchTouchEvent(event)
             }
 
@@ -137,12 +134,10 @@ class BlurMaskView @JvmOverloads constructor(
             }
         }
 
-        // Nếu đang zoom hoặc đa điểm -> chuyển cho PhotoView
         if (isZooming || event.pointerCount >= 2) {
             return photoView.dispatchTouchEvent(event)
         }
 
-        // === Vẽ 1 ngón ===
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 if (ignoreNextDown) {
@@ -188,7 +183,6 @@ class BlurMaskView @JvmOverloads constructor(
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        // Nếu view không hiển thị hoặc bị disable -> bỏ qua hoàn toàn
         return if (!isShown || visibility != View.VISIBLE || !isEnabled) {
             false
         } else {
@@ -196,7 +190,6 @@ class BlurMaskView @JvmOverloads constructor(
         }
     }
 
-    // ===================== VẼ MASK ======================
     private fun drawDot(x: Float, y: Float) {
         val p = if (isEraseMode) erasePaint else fillPaint
         maskCanvas?.drawCircle(x, y, brushSizePx / 2f, p)
@@ -230,7 +223,6 @@ class BlurMaskView @JvmOverloads constructor(
         maskCanvas?.drawPath(path, feather)
     }
 
-    // ===================== TIỆN ÍCH ======================
     private fun compositeAndCallback() {
         val base = baseBitmap ?: return
         val blurred = blurredBitmap ?: return
@@ -262,7 +254,6 @@ class BlurMaskView @JvmOverloads constructor(
         return Pair(((x - dx) / scale).coerceIn(0f, imgW - 1f), ((y - dy) / scale).coerceIn(0f, imgH - 1f))
     }
 
-    // ===================== BLUR & COMPOSITE ======================
     private fun makeBlurred(src: Bitmap, radius: Int): Bitmap {
         val w = src.width
         val h = src.height

@@ -72,7 +72,7 @@ class CutFragment : Fragment(), OnApplyListener {
                 cropView?.setFixedAspectRatio(true)},
         )
 
-        // Mặc định chọn 1:1
+        // Mặc định 1:1
         val (defaultIcon, defaultText, defaultAction) = radioItems.first()
         defaultIcon.imageTintList =
             android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)

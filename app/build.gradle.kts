@@ -85,7 +85,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     //PhotoEditor
-    implementation ("com.github.burhanrashid52:PhotoEditor:3.0.1")
+    implementation ("com.burhanrashid52:photoeditor:3.0.2")
+
 
 }
 

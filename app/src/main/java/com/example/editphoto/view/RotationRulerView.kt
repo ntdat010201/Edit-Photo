@@ -42,7 +42,7 @@ class RotationRulerView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         viewWidth = w.toFloat()
-        tickSpacing = viewWidth / 18f // Luôn hiển thị đủ -45° đến +45° (9 tick mỗi bên)
+        tickSpacing = viewWidth / 18f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -62,7 +62,6 @@ class RotationRulerView @JvmOverloads constructor(
                 // vẽ vạch
                 canvas.drawLine(x, baseY - lineHeight / 2, x, baseY + lineHeight / 2, linePaint)
 
-                // vẽ số (chỉ hiển thị mỗi 15°)
                 if (degree % 15 == 0) {
                     canvas.drawText(
                         degree.toString(),
@@ -74,7 +73,7 @@ class RotationRulerView @JvmOverloads constructor(
             }
         }
 
-        // Vẽ line giữa (0°)
+        // Vẽ line giữa (0 độ)
         canvas.drawLine(centerX, 0f, centerX, height.toFloat(), centerLinePaint)
     }
 

@@ -188,7 +188,6 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
             val w = bmp.width.toDouble()
             val h = bmp.height.toDouble()
 
-            // Chọn một tập điểm lông mày từ MediaPipe FaceMesh (xấp xỉ phổ biến)
             val leftBrowIdx = listOf(70, 63, 105, 66, 107, 55, 52, 53, 46, 124)
             val rightBrowIdx = listOf(336, 296, 334, 293, 300, 283, 282, 295, 285, 413)
 
@@ -237,7 +236,6 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
             }
             if ((p["distance"] ?: 0f) != 0f) {
                 val d = p["distance"]!! * 40.0
-                // d > 0: xa nhau; d < 0: gần nhau
                 moveBrow(src, dst, leftBrowCenter, leftR, 0.0, -d)
                 moveBrow(src, dst, rightBrowCenter, rightR, 0.0, d)
             }
@@ -335,7 +333,6 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
             val dx = gx - center.x; val dy = gy - center.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
-                // Đỉnh giữa: dịch Y mạnh ở tâm, yếu ở 2 đầu theo |dx|
                 val decay = (1 - (abs(dx) / R)).coerceIn(0.0, 1.0)
                 val factor = decay * (1 - (r / R).pow(2))
                 val srcY = (gy - delta * 10.0 * factor).toInt().coerceIn(0, dst.rows() - 1)
@@ -357,7 +354,6 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
             val dx = gx - center.x; val dy = gy - center.y
             val r = sqrt(dx * dx + dy * dy)
             if (r < R) {
-                // Tác động mạnh ở nửa ngoài (đuôi), yếu dần về phía tâm
                 val isOuterHalf = (dx * outerSign) > 0
                 if (isOuterHalf) {
                     val weight = (abs(dx) / R) * (1 - (r / R).pow(2))
@@ -386,7 +382,6 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
         val mask = Mat.zeros(warped.size(), CvType.CV_8UC1)
         val center = Point(mask.width() / 2.0, mask.height() / 2.0)
 
-        // Xác định hướng theo trục trong–ngoài gần nhất với tâm c
         val useLeft = sqrt((center.x + rect.x - leftBrowCenter.x).pow(2.0) + (center.y + rect.y - leftBrowCenter.y).pow(2.0)) <
                 sqrt((center.x + rect.x - rightBrowCenter.x).pow(2.0) + (center.y + rect.y - rightBrowCenter.y).pow(2.0))
         val inner = if (useLeft) leftBrowInner else rightBrowInner
@@ -394,7 +389,7 @@ class EyebrowFragment : Fragment(), SeekBarController, OnApplyListener, UnsavedC
 
         val width = abs(inner.x - outer.x)
         val angle = Math.toDegrees(kotlin.math.atan2(inner.y - outer.y, inner.x - outer.x))
-        val axes = Size(width * 0.65, width * 0.25) // dài hơn theo trục ngang, mảnh theo trục dọc
+        val axes = Size(width * 0.65, width * 0.25)
 
         Imgproc.ellipse(mask, center, axes, angle, 0.0, 360.0, Scalar(255.0), -1)
         Imgproc.GaussianBlur(mask, mask, Size(11.0, 11.0), 6.0)

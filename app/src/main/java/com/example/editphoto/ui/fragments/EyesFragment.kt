@@ -50,7 +50,6 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
     private var currentMode = "size"
     private var seekbarCenterMode = true
 
-    // Lưu trạng thái
     private val eyeParams = mutableMapOf(
         "size" to 0f,
         "height" to 0f,
@@ -136,7 +135,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
     private fun resetEyesToOriginal() {
         beforeEditBitmap?.let {
             viewModel.setPreview(null)
-            viewModel.updateBitmap(it) // khôi phục ảnh gốc
+            viewModel.updateBitmap(it)
         }
         eyeParams.replaceAll { _, _ -> 0f }
         baseBitmap = null
@@ -390,7 +389,7 @@ class EyesFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
         val currentBitmap = act.binding.imgPreview.drawable?.toBitmap() ?: return
 
         viewModel.setPreview(currentBitmap)
-        viewModel.commitPreview() // Lưu thay đổi vào editedBitmap
+        viewModel.commitPreview()
             act.updateImagePreserveZoom(currentBitmap)
 
         hasApplied = true

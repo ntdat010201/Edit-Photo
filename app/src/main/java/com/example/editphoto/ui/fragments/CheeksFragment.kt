@@ -183,7 +183,6 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedCha
         }
     }
 
-    // TẠO MASK HÌNH TRÒN TỰ ĐỘNG THEO MẶT
     private fun createCheekMaskBitmap(
         bitmap: Bitmap,
         landmarks: List<NormalizedLandmark>,
@@ -198,17 +197,15 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedCha
             style = Paint.Style.FILL
         }
 
-        // Điểm trung tâm: gò má cao + khóe miệng
-        val centerIdx1 = if (isLeft) 234 else 454  // khóe miệng
+        val centerIdx1 = if (isLeft) 234 else 454
         val centerIdx2 = if (isLeft) 205 else 425
         val cx = (landmarks[centerIdx1].x() + landmarks[centerIdx2].x()) / 2 * w
         val cy = (landmarks[centerIdx1].y() + landmarks[centerIdx2].y()) / 2 * h
 
-        // Tính bán kính theo chiều rộng miệng
         val mouthLeft = Point((landmarks[61].x() * w).toInt(), (landmarks[61].y() * h).toInt())
         val mouthRight = Point((landmarks[291].x() * w).toInt(), (landmarks[291].y() * h).toInt())
         val mouthWidth = hypot((mouthRight.x - mouthLeft.x).toDouble(), (mouthRight.y - mouthLeft.y).toDouble())
-        val radius = (mouthWidth * 0.4).toFloat() // 22% miệng
+        val radius = (mouthWidth * 0.4).toFloat()
 
         val oval = RectF(
             cx - radius, cy - radius * 0.9f,
@@ -219,7 +216,6 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedCha
         return blurMaskAlpha(mask, radius = (radius * 0.4f).toInt().coerceAtLeast(12))
     }
 
-    // BLUR GAUSSIAN THỦ CÔNG (nhanh hơn RenderScript)
     private fun blurMaskAlpha(src: Bitmap, radius: Int): Bitmap {
         val r = radius.coerceAtLeast(1)
         val w = src.width; val h = src.height
@@ -266,7 +262,6 @@ class CheeksFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedCha
         return tmp
     }
 
-    // BLEND SOFT LIGHT (GIỐNG APP LỚN)
     private fun applyBlushSoftLight(
         base: Bitmap,
         mask: Bitmap,

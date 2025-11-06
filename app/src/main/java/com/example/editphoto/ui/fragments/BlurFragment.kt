@@ -15,10 +15,6 @@ import com.example.editphoto.utils.inter.SeekBarController
 import com.example.editphoto.utils.inter.UnsavedChangesListener
 import com.example.editphoto.view.BlurMaskView
 
-/**
- * Fragment xử lý hiệu ứng làm mờ (Blur)
- * Giữ PhotoView để zoom/pan, BlurMaskView overlay để vẽ vùng mờ.
- */
 class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChangesListener {
 
     private lateinit var binding: FragmentBlurBinding
@@ -48,12 +44,11 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
     }
 
     private fun initData() {
-        // Lấy ảnh trước chỉnh sửa (ưu tiên preview nếu có)
         beforeEditBitmap = parentActivity.viewModel.previewBitmap.value
             ?: parentActivity.viewModel.editedBitmap.value
                     ?: parentActivity.viewModel.originalBitmap.value
 
-        // Tạo BlurMaskView mới (overlay lên PhotoView)
+        // Tạo BlurMaskView
         blurMaskView = BlurMaskView(requireContext()).apply {
             setEraseMode(false)
             beforeEditBitmap?.let { base ->
@@ -72,7 +67,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
             }
         }
 
-        // Thêm BlurMaskView vào FrameLayout trong Activity
+        // Thêm BlurMaskView
         parentActivity.binding.framePreviewContainer.addView(
             blurMaskView,
             FrameLayout.LayoutParams(
@@ -81,12 +76,10 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
             )
         )
 
-        // Gắn SeekBar điều chỉnh cường độ
         view?.post {
             parentActivity.attachSeekBar(this)
         }
 
-        // Reset zoom ảnh về mặc định
         parentActivity.binding.imgPreview.setScale(1f, false)
     }
 
@@ -109,7 +102,7 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
         }
     }
 
-    // ========== ÁP DỤNG ========== //
+
     override fun onApply() {
         val currentBitmap = parentActivity.binding.imgPreview.drawable?.toBitmap() ?: return
         parentActivity.viewModel.setPreview(currentBitmap)
@@ -119,10 +112,8 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
         isDirty = false
     }
 
-    // ========== VÒNG ĐỜI ========== //
     override fun onPause() {
         super.onPause()
-        // Ẩn và vô hiệu hóa BlurMaskView khi chuyển sang fragment khác
         blurMaskView?.apply {
             visibility = View.GONE
             isEnabled = false
@@ -131,7 +122,6 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
 
     override fun onResume() {
         super.onResume()
-        // Hiện lại BlurMaskView khi quay lại fragment này
         blurMaskView?.apply {
             visibility = View.VISIBLE
             isEnabled = true
@@ -141,7 +131,6 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
     override fun onDestroyView() {
         super.onDestroyView()
 
-        // Gỡ BlurMaskView khỏi Activity để không intercept touch
         blurMaskView?.let {
             parentActivity.binding.framePreviewContainer.removeView(it)
             it.detach()
@@ -150,7 +139,6 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
 
         parentActivity.detachSeekBar()
 
-        // Nếu chưa Apply → hoàn tác về ảnh gốc
         if (!hasApplied) {
             beforeEditBitmap?.let {
                 parentActivity.updateImagePreserveZoom(it)
@@ -163,14 +151,12 @@ class BlurFragment : Fragment(), OnApplyListener, SeekBarController, UnsavedChan
         }
     }
 
-    // ========== SeekBarController ==========
     override fun onIntensityChanged(intensity: Float) {
         blurMaskView?.setBlurIntensity(intensity)
     }
 
     override fun getDefaultIntensity(): Float = 0.5f
 
-    // ========== UnsavedChangesListener ==========
     override fun hasUnsavedChanges(): Boolean = isDirty && !hasApplied
 
     override fun revertUnsavedChanges() {

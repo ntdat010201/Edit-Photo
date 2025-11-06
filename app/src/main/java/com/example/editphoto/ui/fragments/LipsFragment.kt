@@ -88,7 +88,6 @@ class LipsFragment : Fragment(), SeekBarController, OnApplyListener,UnsavedChang
         binding.colorless.setOnClickListener {
             selectColor(binding.colorless, binding.borderColorless, COLORLESS)
         }
-        // MÀU HỒNG SEN: #EF9FC4 → RGB(239,159,196) → BGR(196,159,239)
         binding.pinkLotus.setOnClickListener {
             selectColor(binding.pinkLotus, binding.borderPinkLotus, ColorScalar(196.0, 159.0, 239.0))
         }
